@@ -1,0 +1,33 @@
+#root {
+  /* max-width: 1280px; */
+  /* margin: 0 auto; */
+  /* padding: 2rem; */
+  text-align: center;
+  background-color: #333030;
+  font-family: Arial, sans-serif;
+}
+
+.App {
+  position: relative;
+  background-color: #333030;
+  font-family: Arial, sans-serif;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+.card {
+  padding: 2em;
+}
+
+.card p {
+  color: #888;
+}
+
+.project-list {
+  display: flex;
+  flex-wrap: wrap; /* Allow cards to wrap to the next line */
+  gap: 20px; /* Space between cards */
+  justify-content: center; /* Center the cards in the container */
+}
