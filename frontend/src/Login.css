@@ -1,9 +1,15 @@
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+}
 .login-page {
-    max-width: 400px;
-    margin: 0 auto;
+    max-width: 600px;
     padding: 2rem;
     border: 1px solid #ccc;
-    border-radius: 8px;
+    border-radius: 20px;
     background-color: #f9f9f9;
 }
 
@@ -36,6 +42,7 @@ p {
     padding: 0.5rem;
     border: 1px solid #ccc;
     border-radius: 4px;
+    color: #959595;
 }
 
 .form-group input[type="checkbox"] {
@@ -66,22 +73,40 @@ button:hover {
 .google-login {
     background-color: #db4437;
 }
+.google-login:hover {
+    background-color: #c1351d;
+}
+.google-login img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
+}
 
 .facebook-login {
     background-color: #3b5998;
+}
+.facebook-login:hover {
+    background-color: #2d4373;
+}
+.facebook-login img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
 }
 
 .github-login {
     background-color: #333;
 }
-
-.register-link {
-    text-align: center;
-    margin-top: 1rem;
+.github-login:hover {
+    background-color: #222;
+}
+.github-login img {
+    width: 20px;
+    height: 20px;
+    margin-right: 10px;
 }
 
-.terms {
-    font-size: 0.8rem;
+.register-link {
     text-align: center;
     margin-top: 1rem;
 }

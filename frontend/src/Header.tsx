@@ -23,7 +23,7 @@ function Header() {
                         <li><button>French</button></li>
                     </ul>)}
                     <li><button onClick={toLoginPage}>Log In</button></li>    
-                    <li><button>Register</button></li>
+                    <li><button onClick={() => navigate('/register')}>Register</button></li>
                 </ul>
             </nav>
         </header>
