@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Header.css';
 
 function Header() {
     const [open, setOpen] = useState(false);
+    const navigate = useNavigate();
+
+    const toLoginPage = () => {
+        navigate('/login');
+    }
 
     return (
         <header className="app-header">
@@ -16,7 +22,7 @@ function Header() {
                         <li><button>Spanish</button></li>
                         <li><button>French</button></li>
                     </ul>)}
-                    <li><button>Log In</button></li>
+                    <li><button onClick={toLoginPage}>Log In</button></li>    
                     <li><button>Register</button></li>
                 </ul>
             </nav>
