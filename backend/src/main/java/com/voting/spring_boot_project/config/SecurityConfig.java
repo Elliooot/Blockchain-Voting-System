@@ -1,0 +1,42 @@
+package com.voting.spring_boot_project.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import lombok.RequiredArgsConstructor;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+    // This class can be used to configure security settings for the application.
+    // For example, you can define authentication providers, password encoders, etc.
+
+    private final JwtAuthenticationFilter jwtAuthFilter;
+    private final AuthenticationProvider authenticationProvider;
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable()) // 1. CSRF protection is disabled
+            .authorizeHttpRequests(auth -> auth // 2. Authorization rule setup
+                .requestMatchers("/api/v1/auth/**") // 3. Define specific paths if needed
+                .permitAll()
+                .anyRequest()
+                .authenticated() // 4. All other requests require authentication
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 5. Session management
+            )
+            .authenticationProvider(authenticationProvider) // 6. Set AuthenticationProvider
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // 7. Add custom filter
+
+        return http.build();
+    }
+}
