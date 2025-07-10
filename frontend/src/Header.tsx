@@ -6,10 +6,6 @@ function Header() {
     const [open, setOpen] = useState(false);
     const navigate = useNavigate();
 
-    const toLoginPage = () => {
-        navigate('/login');
-    }
-
     return (
         <header className="app-header">
             <h1 className="text-2xl font-bold">Voting</h1>
@@ -22,7 +18,7 @@ function Header() {
                         <li><button>Spanish</button></li>
                         <li><button>French</button></li>
                     </ul>)}
-                    <li><button onClick={toLoginPage}>Log In</button></li>    
+                    <li><button onClick={() => navigate('/login')}>LogIn</button></li>    
                     <li><button onClick={() => navigate('/register')}>Register</button></li>
                 </ul>
             </nav>
