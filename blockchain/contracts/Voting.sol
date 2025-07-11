@@ -74,6 +74,7 @@ contract Voting {
             title: _title,
             startTime: _startTime,
             duration: _duration,
+            terminated: false,
             result: ""
         });
 
@@ -88,18 +89,18 @@ contract Voting {
         }));
     }
 
-    function vote(uint256 _electionId, uint256 _proposalIndex) public onlyDuringVoting(_electionId) whenNotTerminated(){
+    function vote(uint256 _electionId, uint256 _proposalIndex) public onlyDuringVoting(_electionId) whenNotTerminated(_electionId){
         require(voters[msg.sender].isRegistered, "You must be registered to vote");
         require(!voters[msg.sender].hasVoted, "You have already voted");
 
         voters[msg.sender].hasVoted = true;
-        voters[msg.sender].vote = proposalIndex;
+        voters[msg.sender].vote = _proposalIndex;
         electionProposals[_electionId][_proposalIndex].voteCount += 1;
 
         emit VoteRecorded(msg.sender, _electionId, _proposalIndex);
     }
 
-    function getVoteCounts(uint256 _electionId) public view onlyAfterVoting(_electionId) whenNotTerminated() returns (uint256[] memory) {
+    function getVoteCounts(uint256 _electionId) public view onlyAfterVoting(_electionId) whenNotTerminated(_electionId) returns (uint256[] memory) {
         uint256[] memory counts = new uint256[](electionProposals[_electionId].length);
 
         for(uint256 i = 0; i < electionProposals[_electionId].length; i++) {
@@ -109,7 +110,7 @@ contract Voting {
         return counts;
     }
 
-    function finalizeResult(uint256 _electionId) public onlyAdmin() onlyAfterVoting(_electionId) whenNotTerminated(){
+    function finalizeResult(uint256 _electionId) public onlyAdmin() onlyAfterVoting(_electionId) whenNotTerminated(_electionId){
         string memory result;
         uint256 maxVoteCount = 0;
         for (uint256 i = 0; i < electionProposals[_electionId].length; i++) {
@@ -121,7 +122,7 @@ contract Voting {
         elections[_electionId].result = result;
     } 
 
-    function getResult() public view onlyAfterVoting() whenNotTerminated() returns (string memory) {
+    function getResult(uint256 _electionId) public view onlyAfterVoting(_electionId) whenNotTerminated(_electionId) returns (string memory) {
         return elections[_electionId].result;
     }
 
@@ -129,7 +130,7 @@ contract Voting {
         elections[_electionId].terminated = true;
     }
 
-    function registerVoter(address voter) public onlyAdmin() onlyBeforeVoting() {
+    function registerVoter(uint256 _electionId, address voter) public onlyAdmin() onlyBeforeVoting(_electionId) {
         require(!voters[voter].isRegistered, "Voter is already registered");
 
         voters[voter].isRegistered = true;
