@@ -48,39 +48,55 @@ describe("Voting Contract", function() {
         expect(registeredVoter3.isRegistered).to.be.false;
     });
 
-    it("4: Should be correctly registered", async function () {
-        const { voting, voter1 } = await loadFixture(deployVotingFixture);
-
-        await voting.registerVoter(1, voter1.address);
-        const voter = await voting.getVoter(1, voter1.address);
-        expect(voter.isRegistered).to.be.true;
-    });
-
-    it("5: Should allow voting during the period", async function () {
+    it("4: Should allow voting during the period", async function () {
         const { voting, admin, voter1, voter2 } = await loadFixture(deployVotingFixture);
         await (voting.connect(admin) as any).addProposal(1, "Proposal A");
         await (voting.connect(admin) as any).addProposal(1, "Proposal B");
         await (voting.connect(admin) as any).registerVoter(1, voter1.address);
         await (voting.connect(admin) as any).registerVoter(1, voter2.address);
-
+        
         await ethers.provider.send("evm_increaseTime", [300]); // Skip 5 mins
         await ethers.provider.send("evm_mine", []); // Mining new block
-
+        
         await (voting.connect(voter1) as any).vote(1, 1);
         await (voting.connect(voter2) as any).vote(1, 1);
         const proposalB = await voting.getProposal(1, 1);
         expect(proposalB.voteCount).to.equal(2);
     });
-
-    it("6: Should prevent voting after duration", async function () {
+    
+    it("5: Should prevent voting after duration", async function () {
         const { voting, voter1, admin } = await loadFixture(deployVotingFixture);
         await (voting.connect(admin) as any).addProposal(1, "Proposal A");
         await (voting.connect(admin) as any).registerVoter(1, voter1.address);
         
         await ethers.provider.send("evm_increaseTime", [86400 + 3600]); // Skip 1 day
         await ethers.provider.send("evm_mine", []); // Mining new block
-
+        
         await expect((voting.connect(voter1) as any).vote(1, 0)).to.be.revertedWith("Voting is not active");
+    });
+
+    it("6: Should get the vote count correctly", async function () {
+        const { voting, admin, voter1, voter2, voter3 } = await loadFixture(deployVotingFixture);
+
+        await (voting.connect(admin) as any).addProposal(1, "Proposal A");
+        await (voting.connect(admin) as any).addProposal(1, "Proposal B");
+        await (voting.connect(admin) as any).registerVoter(1, voter1.address);
+        await (voting.connect(admin) as any).registerVoter(1, voter2.address);
+        await (voting.connect(admin) as any).registerVoter(1, voter3.address);
+
+        await ethers.provider.send("evm_increaseTime", [3600]);
+        await ethers.provider.send("evm_mine", []);
+
+        await (voting.connect(voter1) as any).vote(1, 1);
+        await (voting.connect(voter2) as any).vote(1, 0);
+        await (voting.connect(voter3) as any).vote(1, 1);
+        
+        await ethers.provider.send("evm_increaseTime", [86400]);
+        await ethers.provider.send("evm_mine", []);
+
+        const proposalsCount = await voting.getVoteCounts(1);
+        expect(proposalsCount[0]).to.equal(1);
+        expect(proposalsCount[1]).to.equal(2);
     });
     
     it("7: Should finalize and get result after voting", async function () {
