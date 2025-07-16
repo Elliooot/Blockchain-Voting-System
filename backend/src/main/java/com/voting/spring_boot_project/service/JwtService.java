@@ -27,13 +27,21 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractUserRole(String token) {
+        return extractClaim(token, claims -> claims.get("role", String.class));
+    }
+
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
     }
 
     public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
+        Map<String, Object> extraClaims = new HashMap<>();
+        userDetails.getAuthorities().stream()
+                .findFirst()
+                .ifPresent(authority -> extraClaims.put("role", authority.getAuthority()));
+        return generateToken(extraClaims, userDetails);
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userdetails){
@@ -43,13 +51,18 @@ public class JwtService {
             .subject(userdetails.getUsername())
             .issuedAt(new Date(System.currentTimeMillis()))
             .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 5))
-            .signWith(getSigningKey())
+            .signWith(getSignInKey())
             .compact();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public boolean isTokenValidAndBelongToAdmin(String token, UserDetails userDetails) {
+        final String role = extractUserRole(token);
+        return (isTokenValid(token, userDetails) && role.equals("ElectoralAdmin"));
     }
 
     private boolean isTokenExpired(String token) {
@@ -63,13 +76,13 @@ public class JwtService {
     private Claims extractAllClaims(String token) {
         return Jwts
             .parser()
-            .verifyWith((SecretKey) getSigningKey())
+            .verifyWith((SecretKey) getSignInKey())
             .build()
             .parseSignedClaims(token)
             .getPayload();
     }
 
-    private Key getSigningKey() {
+    private Key getSignInKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }

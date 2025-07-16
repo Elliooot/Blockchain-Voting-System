@@ -1,16 +1,15 @@
 package com.voting.spring_boot_project.service;
 
-
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.voting.spring_boot_project.entity.User;
-import com.voting.spring_boot_project.entity.Role;
-import com.voting.spring_boot_project.controller.AuthenticationRequest;
-import com.voting.spring_boot_project.controller.AuthenticationResponse;
-import com.voting.spring_boot_project.controller.RegisterRequest;
+import com.voting.spring_boot_project.dto.AuthenticationRequest;
+import com.voting.spring_boot_project.dto.AuthenticationResponse;
+import com.voting.spring_boot_project.dto.RegisterRequest;
+// import com.voting.spring_boot_project.entity.Role;
 import com.voting.spring_boot_project.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,7 @@ public class AuthenticationService {
                 .lastName(request.getLastname())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.Voter)
+                .role(request.getRole())
                 .build();
 
         userRepository.save(user);

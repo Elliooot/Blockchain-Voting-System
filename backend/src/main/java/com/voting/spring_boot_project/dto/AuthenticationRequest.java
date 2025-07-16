@@ -1,4 +1,4 @@
-package com.voting.spring_boot_project.controller;
+package com.voting.spring_boot_project.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -27,14 +28,26 @@ import lombok.NoArgsConstructor;
 public class User implements UserDetails{
     @Id
     @GeneratedValue
+    @Column(name = "user_id")
     private Integer id;
     private String firstName;
     private String lastName;
     private String email;
     private String password;
 
+    @Column(name = "wallet_address", nullable = true, length = 255, unique = true)
+    private String walletAddress;
+
     @Enumerated(EnumType.STRING)
     private Role role;
+
+    public User(String firstName, String lastName, String email, String password, Role role) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.password = password;
+        this.role = role;
+    }
 
     @Override
     public String getUsername() {
