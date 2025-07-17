@@ -1,3 +1,7 @@
+* {
+    box-sizing: border-box;
+}
+
 .register-container {
     display: flex;
     justify-content: center;
@@ -27,11 +31,13 @@ p {
 
 .form-row {
     display: flex;
-    gap: 8rem;
+    gap: 1rem;
+    justify-content: space-between;
 }
 
 .form-group {
     margin-bottom: 1rem;
+    width: 100%;
 }
 
 .form-group label {
@@ -49,10 +55,6 @@ p {
     border-radius: 4px;
     color: #959595;
 }
-
-/* .form-group input[type="text"] {
-    width: 50%;
-} */
 
 button {
     width: 100%;
@@ -72,6 +74,12 @@ button:hover {
     text-align: center;
     margin: 1rem 0;
 }
+.google-login,
+.facebook-login,
+.github-login {
+    margin-bottom: 0.5rem;
+}
+
 .google-login {
     background-color: #db4437;
 }
