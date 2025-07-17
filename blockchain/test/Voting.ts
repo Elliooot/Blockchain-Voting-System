@@ -14,11 +14,11 @@ describe("Voting Contract", function() {
         return { voting, admin, voter1, voter2, voter3 };
     }
 
-    it("1: Should create an election in constructor", async function () {
+    it("1: Should create an ballot in constructor", async function () {
         const { voting } = await loadFixture(deployVotingFixture);
-        const election = await voting.elections(1);
-        expect(election.title).to.equal("First Election");
-        expect(election.proposalCount).to.equal(0);
+        const ballot = await voting.ballots(1);
+        expect(ballot.title).to.equal("First Ballot");
+        expect(ballot.proposalCount).to.equal(0);
     });
 
     it("2: Should add proposals before voting starts", async function () {
@@ -31,8 +31,8 @@ describe("Voting Contract", function() {
         expect(proposalA.name).to.equal("Proposal A");
         expect(proposalB.name).to.equal("Proposal B");
 
-        const election = await voting.elections(1);
-        expect(election.proposalCount).to.equal(2);
+        const ballot = await voting.ballots(1);
+        expect(ballot.proposalCount).to.equal(2);
     });
     
     it("3: Should register voters before voting", async function () {
@@ -127,7 +127,7 @@ describe("Voting Contract", function() {
         const { voting, admin } = await loadFixture(deployVotingFixture);
         
         await (voting.connect(admin) as any).terminateVoting(1);
-        const election = await voting.elections(1);
-        expect(election.terminated).to.be.true;
+        const ballot = await voting.ballots(1);
+        expect(ballot.terminated).to.be.true;
     });
 });

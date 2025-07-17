@@ -53,21 +53,21 @@ export interface VotingInterface extends Interface {
   getFunction(
     nameOrSignature:
       | "addProposal"
-      | "createElection"
-      | "elections"
+      | "ballots"
+      | "createBallot"
       | "finalizeResult"
       | "getProposal"
       | "getResult"
       | "getVoteCounts"
       | "getVoter"
-      | "nextElectionId"
+      | "nextBallotId"
       | "registerVoter"
       | "terminateVoting"
       | "vote"
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "ElectionCreated" | "VoteRecorded"
+    nameOrSignatureOrTopic: "BallotCreated" | "VoteRecorded"
   ): EventFragment;
 
   encodeFunctionData(
@@ -75,12 +75,12 @@ export interface VotingInterface extends Interface {
     values: [BigNumberish, string]
   ): string;
   encodeFunctionData(
-    functionFragment: "createElection",
-    values: [string, BigNumberish, BigNumberish]
+    functionFragment: "ballots",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "elections",
-    values: [BigNumberish]
+    functionFragment: "createBallot",
+    values: [string, BigNumberish, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "finalizeResult",
@@ -103,7 +103,7 @@ export interface VotingInterface extends Interface {
     values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "nextElectionId",
+    functionFragment: "nextBallotId",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -123,11 +123,11 @@ export interface VotingInterface extends Interface {
     functionFragment: "addProposal",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "ballots", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "createElection",
+    functionFragment: "createBallot",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "elections", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "finalizeResult",
     data: BytesLike
@@ -143,7 +143,7 @@ export interface VotingInterface extends Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "getVoter", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "nextElectionId",
+    functionFragment: "nextBallotId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -157,11 +157,11 @@ export interface VotingInterface extends Interface {
   decodeFunctionResult(functionFragment: "vote", data: BytesLike): Result;
 }
 
-export namespace ElectionCreatedEvent {
-  export type InputTuple = [electionId: BigNumberish, title: string];
-  export type OutputTuple = [electionId: bigint, title: string];
+export namespace BallotCreatedEvent {
+  export type InputTuple = [ballotId: BigNumberish, title: string];
+  export type OutputTuple = [ballotId: bigint, title: string];
   export interface OutputObject {
-    electionId: bigint;
+    ballotId: bigint;
     title: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -173,17 +173,17 @@ export namespace ElectionCreatedEvent {
 export namespace VoteRecordedEvent {
   export type InputTuple = [
     voter: AddressLike,
-    electionId: BigNumberish,
+    ballotId: BigNumberish,
     proposalIndex: BigNumberish
   ];
   export type OutputTuple = [
     voter: string,
-    electionId: bigint,
+    ballotId: bigint,
     proposalIndex: bigint
   ];
   export interface OutputObject {
     voter: string;
-    electionId: bigint;
+    ballotId: bigint;
     proposalIndex: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
@@ -236,22 +236,16 @@ export interface Voting extends BaseContract {
   ): Promise<this>;
 
   addProposal: TypedContractMethod<
-    [_electionId: BigNumberish, _name: string],
+    [_ballotId: BigNumberish, _name: string],
     [void],
     "nonpayable"
   >;
 
-  createElection: TypedContractMethod<
-    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-
-  elections: TypedContractMethod<
+  ballots: TypedContractMethod<
     [arg0: BigNumberish],
     [
       [bigint, string, bigint, bigint, boolean, string, string, bigint] & {
-        electionId: bigint;
+        ballotId: bigint;
         title: string;
         startTime: bigint;
         duration: bigint;
@@ -264,48 +258,54 @@ export interface Voting extends BaseContract {
     "view"
   >;
 
+  createBallot: TypedContractMethod<
+    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+
   finalizeResult: TypedContractMethod<
-    [_electionId: BigNumberish],
+    [_ballotId: BigNumberish],
     [void],
     "nonpayable"
   >;
 
   getProposal: TypedContractMethod<
-    [_electionId: BigNumberish, _proposalId: BigNumberish],
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [Voting.ProposalStructOutput],
     "view"
   >;
 
-  getResult: TypedContractMethod<[_electionId: BigNumberish], [string], "view">;
+  getResult: TypedContractMethod<[_ballotId: BigNumberish], [string], "view">;
 
   getVoteCounts: TypedContractMethod<
-    [_electionId: BigNumberish],
+    [_ballotId: BigNumberish],
     [bigint[]],
     "view"
   >;
 
   getVoter: TypedContractMethod<
-    [_electionId: BigNumberish, _voterAddress: AddressLike],
+    [_ballotId: BigNumberish, _voterAddress: AddressLike],
     [Voting.VoterStructOutput],
     "view"
   >;
 
-  nextElectionId: TypedContractMethod<[], [bigint], "view">;
+  nextBallotId: TypedContractMethod<[], [bigint], "view">;
 
   registerVoter: TypedContractMethod<
-    [_electionId: BigNumberish, voter: AddressLike],
+    [_ballotId: BigNumberish, voter: AddressLike],
     [void],
     "nonpayable"
   >;
 
   terminateVoting: TypedContractMethod<
-    [_electionId: BigNumberish],
+    [_ballotId: BigNumberish],
     [void],
     "nonpayable"
   >;
 
   vote: TypedContractMethod<
-    [_electionId: BigNumberish, _proposalId: BigNumberish],
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -317,24 +317,17 @@ export interface Voting extends BaseContract {
   getFunction(
     nameOrSignature: "addProposal"
   ): TypedContractMethod<
-    [_electionId: BigNumberish, _name: string],
+    [_ballotId: BigNumberish, _name: string],
     [void],
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "createElection"
-  ): TypedContractMethod<
-    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
-    [void],
-    "nonpayable"
-  >;
-  getFunction(
-    nameOrSignature: "elections"
+    nameOrSignature: "ballots"
   ): TypedContractMethod<
     [arg0: BigNumberish],
     [
       [bigint, string, bigint, bigint, boolean, string, string, bigint] & {
-        electionId: bigint;
+        ballotId: bigint;
         title: string;
         startTime: bigint;
         duration: bigint;
@@ -347,55 +340,62 @@ export interface Voting extends BaseContract {
     "view"
   >;
   getFunction(
+    nameOrSignature: "createBallot"
+  ): TypedContractMethod<
+    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "finalizeResult"
-  ): TypedContractMethod<[_electionId: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<[_ballotId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "getProposal"
   ): TypedContractMethod<
-    [_electionId: BigNumberish, _proposalId: BigNumberish],
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [Voting.ProposalStructOutput],
     "view"
   >;
   getFunction(
     nameOrSignature: "getResult"
-  ): TypedContractMethod<[_electionId: BigNumberish], [string], "view">;
+  ): TypedContractMethod<[_ballotId: BigNumberish], [string], "view">;
   getFunction(
     nameOrSignature: "getVoteCounts"
-  ): TypedContractMethod<[_electionId: BigNumberish], [bigint[]], "view">;
+  ): TypedContractMethod<[_ballotId: BigNumberish], [bigint[]], "view">;
   getFunction(
     nameOrSignature: "getVoter"
   ): TypedContractMethod<
-    [_electionId: BigNumberish, _voterAddress: AddressLike],
+    [_ballotId: BigNumberish, _voterAddress: AddressLike],
     [Voting.VoterStructOutput],
     "view"
   >;
   getFunction(
-    nameOrSignature: "nextElectionId"
+    nameOrSignature: "nextBallotId"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
     nameOrSignature: "registerVoter"
   ): TypedContractMethod<
-    [_electionId: BigNumberish, voter: AddressLike],
+    [_ballotId: BigNumberish, voter: AddressLike],
     [void],
     "nonpayable"
   >;
   getFunction(
     nameOrSignature: "terminateVoting"
-  ): TypedContractMethod<[_electionId: BigNumberish], [void], "nonpayable">;
+  ): TypedContractMethod<[_ballotId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "vote"
   ): TypedContractMethod<
-    [_electionId: BigNumberish, _proposalId: BigNumberish],
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
   >;
 
   getEvent(
-    key: "ElectionCreated"
+    key: "BallotCreated"
   ): TypedContractEvent<
-    ElectionCreatedEvent.InputTuple,
-    ElectionCreatedEvent.OutputTuple,
-    ElectionCreatedEvent.OutputObject
+    BallotCreatedEvent.InputTuple,
+    BallotCreatedEvent.OutputTuple,
+    BallotCreatedEvent.OutputObject
   >;
   getEvent(
     key: "VoteRecorded"
@@ -406,15 +406,15 @@ export interface Voting extends BaseContract {
   >;
 
   filters: {
-    "ElectionCreated(uint256,string)": TypedContractEvent<
-      ElectionCreatedEvent.InputTuple,
-      ElectionCreatedEvent.OutputTuple,
-      ElectionCreatedEvent.OutputObject
+    "BallotCreated(uint256,string)": TypedContractEvent<
+      BallotCreatedEvent.InputTuple,
+      BallotCreatedEvent.OutputTuple,
+      BallotCreatedEvent.OutputObject
     >;
-    ElectionCreated: TypedContractEvent<
-      ElectionCreatedEvent.InputTuple,
-      ElectionCreatedEvent.OutputTuple,
-      ElectionCreatedEvent.OutputObject
+    BallotCreated: TypedContractEvent<
+      BallotCreatedEvent.InputTuple,
+      BallotCreatedEvent.OutputTuple,
+      BallotCreatedEvent.OutputObject
     >;
 
     "VoteRecorded(address,uint256,uint256)": TypedContractEvent<

@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 // import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,7 +18,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-// @Table(name = "option")
+@Table(name = "option")
 public class Option {
     @Id
     @GeneratedValue
@@ -25,8 +26,8 @@ public class Option {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "election_id")
-    private Integer electionId;
+    @JoinColumn(name = "ballot_id")
+    private Ballot ballot;
 
     private String name;
     private String description;

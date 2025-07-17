@@ -26,16 +26,16 @@ public class Vote {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "election_id")
-    private Integer electionId;
+    @JoinColumn(name = "ballot_id")
+    private Ballot ballot;
 
     @OneToOne
     @JoinColumn(name = "user_id")
-    private Integer userId;
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "option_id")
-    private Integer optionId;
+    private Option option;
 
     private Date timestamp;
     private String transactionHash;

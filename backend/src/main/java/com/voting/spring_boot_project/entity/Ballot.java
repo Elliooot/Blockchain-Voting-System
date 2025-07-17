@@ -1,13 +1,17 @@
 package com.voting.spring_boot_project.entity;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -34,7 +38,9 @@ public class Ballot {
     @Enumerated(EnumType.STRING)
     private Status status;
 
-    private Option[] options;
+    @Builder.Default
+    @OneToMany(mappedBy = "ballot", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Option> options = new ArrayList<>();
 
     @Column(name = "contract_address", nullable = false, length = 255, unique = true)
     private String contractAddress;

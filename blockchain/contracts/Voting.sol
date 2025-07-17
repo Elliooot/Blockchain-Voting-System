@@ -12,8 +12,8 @@ contract Voting {
         string name;
         uint256 voteCount;
     }
-    struct Election {
-        uint256 electionId;
+    struct Ballot {
+        uint256 ballotId;
         string title;
         uint256 startTime;
         uint256 duration;
@@ -27,58 +27,58 @@ contract Voting {
     
     // address public admin;
     
-    // mapping(uint256 => Proposal[]) public electionProposals;
-    mapping(uint256 => Election) public elections;
-    uint256 public nextElectionId;
+    // mapping(uint256 => Proposal[]) public ballotProposals;
+    mapping(uint256 => Ballot) public ballots;
+    uint256 public nextBallotId;
     // bool public terminated = false;
 
-    event ElectionCreated(uint256 electionId, string title);
-    event VoteRecorded(address indexed voter, uint256 electionId, uint256 proposalIndex);
+    event BallotCreated(uint256 ballotId, string title);
+    event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalIndex);
 
-    modifier onlyAdmin(uint256 _electionId) {
-        require(msg.sender == elections[_electionId].admin, "Only admin can perform this action");
+    modifier onlyAdmin(uint256 _ballotId) {
+        require(msg.sender == ballots[_ballotId].admin, "Only admin can perform this action");
         _;
     }
 
-    modifier onlyBeforeVoting(uint256 _electionId) {
-        Election storage election = elections[_electionId];
-        require(block.timestamp < election.startTime, "Voting has already started");
+    modifier onlyBeforeVoting(uint256 _ballotId) {
+        Ballot storage ballot = ballots[_ballotId];
+        require(block.timestamp < ballot.startTime, "Voting has already started");
         _;
     }
 
-    modifier onlyDuringVoting(uint256 _electionId) {
-        Election storage election = elections[_electionId];
-        require(block.timestamp >= election.startTime && block.timestamp < election.startTime + election.duration, "Voting is not active");
+    modifier onlyDuringVoting(uint256 _ballotId) {
+        Ballot storage ballot = ballots[_ballotId];
+        require(block.timestamp >= ballot.startTime && block.timestamp < ballot.startTime + ballot.duration, "Voting is not active");
         _;
     }
 
-    modifier onlyAfterVoting(uint256 _electionId) {
-        Election storage election = elections[_electionId];
-        require(block.timestamp >= election.startTime + election.duration, "Voting period has not ended yet");
+    modifier onlyAfterVoting(uint256 _ballotId) {
+        Ballot storage ballot = ballots[_ballotId];
+        require(block.timestamp >= ballot.startTime + ballot.duration, "Voting period has not ended yet");
         _;
     }
 
-    modifier whenNotTerminated(uint256 _electionId) {
-        require(!elections[_electionId].terminated, "Voting is terminated");
+    modifier whenNotTerminated(uint256 _ballotId) {
+        require(!ballots[_ballotId].terminated, "Voting is terminated");
         _;
     }
 
     constructor(string memory _title, uint256 _startTime, uint256 _duration) {
-        nextElectionId = 1;
+        nextBallotId = 1;
 
-        Election storage newElection = elections[nextElectionId];
+        Ballot storage newBallot = ballots[nextBallotId];
 
-        newElection.electionId = nextElectionId;
-        newElection.title = _title;
-        newElection.startTime = _startTime;
-        newElection.duration = _duration;
-        newElection.terminated = false;
-        newElection.result = "";
-        newElection.admin = msg.sender;
-        newElection.proposalCount = 0;
+        newBallot.ballotId = nextBallotId;
+        newBallot.title = _title;
+        newBallot.startTime = _startTime;
+        newBallot.duration = _duration;
+        newBallot.terminated = false;
+        newBallot.result = "";
+        newBallot.admin = msg.sender;
+        newBallot.proposalCount = 0;
 
-        // elections[nextElectionId] = Election({
-        //     electionId: nextElectionId,
+        // ballots[nextBallotId] = Ballot({
+        //     ballotId: nextBallotId,
         //     title: _title,
         //     startTime: _startTime,
         //     duration: _duration,
@@ -87,95 +87,95 @@ contract Voting {
         //     // voters: mapping(address => Voter)()
         // });
 
-        emit ElectionCreated(nextElectionId, _title);
+        emit BallotCreated(nextBallotId, _title);
     }
 
-    function createElection(string memory _title, uint256 _startTime, uint256 _duration) public {
-        uint256 electionId = nextElectionId++;
+    function createBallot(string memory _title, uint256 _startTime, uint256 _duration) public {
+        uint256 ballotId = nextBallotId++;
 
-        Election storage newElection = elections[electionId];
-        newElection.electionId = electionId;
-        newElection.title = _title;
-        newElection.startTime = _startTime;
-        newElection.duration = _duration;
-        newElection.terminated = false;
-        newElection.result = "";
-        newElection.admin = msg.sender;
-        newElection.proposalCount = 0;
+        Ballot storage newBallot = ballots[ballotId];
+        newBallot.ballotId = ballotId;
+        newBallot.title = _title;
+        newBallot.startTime = _startTime;
+        newBallot.duration = _duration;
+        newBallot.terminated = false;
+        newBallot.result = "";
+        newBallot.admin = msg.sender;
+        newBallot.proposalCount = 0;
 
-        emit ElectionCreated(electionId, _title);
+        emit BallotCreated(ballotId, _title);
     }
 
-    function addProposal(uint256 _electionId, string memory _name) public onlyAdmin(_electionId) onlyBeforeVoting(_electionId) {
-        Election storage election = elections[_electionId];
+    function addProposal(uint256 _ballotId, string memory _name) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
+        Ballot storage ballot = ballots[_ballotId];
 
-        uint256 newProposalId = elections[_electionId].proposalCount;
+        uint256 newProposalId = ballots[_ballotId].proposalCount;
 
-        elections[_electionId].proposals[newProposalId] = Proposal({
+        ballots[_ballotId].proposals[newProposalId] = Proposal({
             index: newProposalId,
             name: _name,
             voteCount: 0
         });
         
-        election.proposalCount++;
+        ballot.proposalCount++;
     }
 
-    function vote(uint256 _electionId, uint256 _proposalId) public onlyDuringVoting(_electionId) whenNotTerminated(_electionId){
-        require(elections[_electionId].voters[msg.sender].isRegistered, "You must be registered to vote");
-        require(!elections[_electionId].voters[msg.sender].hasVoted, "You have already voted");
+    function vote(uint256 _ballotId, uint256 _proposalId) public onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
+        require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
+        require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
 
-        elections[_electionId].voters[msg.sender].hasVoted = true;
-        elections[_electionId].voters[msg.sender].vote = _proposalId;
-        elections[_electionId].proposals[_proposalId].voteCount += 1;
+        ballots[_ballotId].voters[msg.sender].hasVoted = true;
+        ballots[_ballotId].voters[msg.sender].vote = _proposalId;
+        ballots[_ballotId].proposals[_proposalId].voteCount += 1;
 
-        emit VoteRecorded(msg.sender, _electionId, _proposalId);
+        emit VoteRecorded(msg.sender, _ballotId, _proposalId);
     }
 
-    function getVoteCounts(uint256 _electionId) public view onlyAfterVoting(_electionId) whenNotTerminated(_electionId) returns (uint256[] memory) {
-        uint256 proposalCount = elections[_electionId].proposalCount;
+    function getVoteCounts(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (uint256[] memory) {
+        uint256 proposalCount = ballots[_ballotId].proposalCount;
         uint256[] memory counts = new uint256[](proposalCount);
 
         for(uint256 i = 0; i < proposalCount; i++) {
-            counts[i] = elections[_electionId].proposals[i].voteCount;
+            counts[i] = ballots[_ballotId].proposals[i].voteCount;
         }
 
         return counts;
     }
 
-    function finalizeResult(uint256 _electionId) public onlyAdmin(_electionId) onlyAfterVoting(_electionId) whenNotTerminated(_electionId){
+    function finalizeResult(uint256 _ballotId) public onlyAdmin(_ballotId) onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId){
         string memory result;
         uint256 maxVoteCount = 0;
-        uint256 proposalCount = elections[_electionId].proposalCount;
+        uint256 proposalCount = ballots[_ballotId].proposalCount;
         for (uint256 i = 0; i < proposalCount; i++) {
-            if(elections[_electionId].proposals[i].voteCount > maxVoteCount) {
-                maxVoteCount = elections[_electionId].proposals[i].voteCount;
-                result = elections[_electionId].proposals[i].name;
+            if(ballots[_ballotId].proposals[i].voteCount > maxVoteCount) {
+                maxVoteCount = ballots[_ballotId].proposals[i].voteCount;
+                result = ballots[_ballotId].proposals[i].name;
             }
         }
-        elections[_electionId].result = result;
+        ballots[_ballotId].result = result;
     } 
 
-    function getResult(uint256 _electionId) public view onlyAfterVoting(_electionId) whenNotTerminated(_electionId) returns (string memory) {
-        return elections[_electionId].result;
+    function getResult(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (string memory) {
+        return ballots[_ballotId].result;
     }
 
-    function terminateVoting(uint256 _electionId) public onlyAdmin(_electionId) {
-        elections[_electionId].terminated = true;
+    function terminateVoting(uint256 _ballotId) public onlyAdmin(_ballotId) {
+        ballots[_ballotId].terminated = true;
     }
 
-    function registerVoter(uint256 _electionId, address voter) public onlyAdmin(_electionId) onlyBeforeVoting(_electionId) {
-        require(!elections[_electionId].voters[voter].isRegistered, "Voter is already registered");
+    function registerVoter(uint256 _ballotId, address voter) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
+        require(!ballots[_ballotId].voters[voter].isRegistered, "Voter is already registered");
 
-        elections[_electionId].voters[voter].isRegistered = true;
-        elections[_electionId].voters[voter].hasVoted = false;
-        elections[_electionId].voters[voter].vote = 0;
+        ballots[_ballotId].voters[voter].isRegistered = true;
+        ballots[_ballotId].voters[voter].hasVoted = false;
+        ballots[_ballotId].voters[voter].vote = 0;
     }
     
-    function getProposal(uint256 _electionId, uint256 _proposalId) public view returns (Proposal memory) {
-        return elections[_electionId].proposals[_proposalId];
+    function getProposal(uint256 _ballotId, uint256 _proposalId) public view returns (Proposal memory) {
+        return ballots[_ballotId].proposals[_proposalId];
     }
 
-    function getVoter(uint256 _electionId, address _voterAddress) public view returns(Voter memory) {
-        return elections[_electionId].voters[_voterAddress];
+    function getVoter(uint256 _ballotId, address _voterAddress) public view returns(Voter memory) {
+        return ballots[_ballotId].voters[_voterAddress];
     }
 }
