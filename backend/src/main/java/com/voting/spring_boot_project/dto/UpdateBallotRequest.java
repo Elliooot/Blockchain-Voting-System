@@ -1,6 +1,8 @@
 package com.voting.spring_boot_project.dto;
 
+import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 
 import com.voting.spring_boot_project.entity.Option;
 
@@ -17,6 +19,6 @@ public class UpdateBallotRequest {
     private String title;
     private String description;
     private Date startTime;
-    private Date duration;
-    private Option[] options;
+    private Duration duration;
+    private List<Option> options;
 }

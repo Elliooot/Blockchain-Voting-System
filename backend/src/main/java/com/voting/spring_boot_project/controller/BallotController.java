@@ -25,21 +25,21 @@ import lombok.RequiredArgsConstructor;
 public class BallotController {
     private final BallotService ballotService;
 
-    @PostMapping("/create_ballot")
+    @PostMapping("/create")
     public ResponseEntity<BallotResponse> createBallot(
         @RequestBody CreateBallotRequest request
     ) {
         return ResponseEntity.ok(ballotService.createBallot(request));
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/update/{id}")
     public ResponseEntity<BallotResponse> updateBallot(
         @PathVariable Integer id, @RequestBody UpdateBallotRequest request
     ) {
         return ResponseEntity.ok(ballotService.updateInfo(id, request));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     public ResponseEntity<Map<String, String>> deleteBallot(@PathVariable Integer id) {
         ballotService.deleteBallot(id);
         Map<String, String> response = new HashMap<>();

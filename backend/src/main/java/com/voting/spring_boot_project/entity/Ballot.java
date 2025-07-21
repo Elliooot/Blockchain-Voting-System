@@ -1,5 +1,6 @@
 package com.voting.spring_boot_project.entity;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -33,7 +34,7 @@ public class Ballot {
     private String title;
     private String description;
     private Date startTime;
-    private Date duration;
+    private Duration duration;
     
     @Enumerated(EnumType.STRING)
     private Status status;
@@ -42,7 +43,7 @@ public class Ballot {
     @OneToMany(mappedBy = "ballot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options = new ArrayList<>();
 
-    @Column(name = "contract_address", nullable = false, length = 255, unique = true)
+    // @Column(name = "contract_address", nullable = false, length = 255, unique = true)
     private String contractAddress;
 
     private String result;
