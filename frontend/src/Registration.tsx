@@ -33,7 +33,9 @@ function Registration() {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:8080/register', formData);
+            const { confirmPassword, ...requestData } = formData;
+
+            const response = await axios.post('http://localhost:8080/api/v1/auth/register', requestData);
 
             if(response.status === 201 || response.status === 200) {
                 navigate('/login')
