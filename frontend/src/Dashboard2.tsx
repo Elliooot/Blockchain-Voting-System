@@ -12,6 +12,7 @@ import {
 import { AppProvider, DashboardHeader, DashboardLayout } from '@toolpad/core';
 import LabTabs from './components/labtabs';
 import { Box } from '@mui/material';
+import { Outlet } from 'react-router-dom';
 // import { createTheme } from '@mui/material';
 
 // const theme = createTheme({
@@ -67,9 +68,7 @@ function Dashboard() {
                 {/* <DemoPageContent pathname={router.pathname} /> */}
                 
                 <main>
-                    <Box>
-
-                    </Box>
+                    <Outlet />
                 </main>
             </DashboardLayout>        
         </AppProvider>

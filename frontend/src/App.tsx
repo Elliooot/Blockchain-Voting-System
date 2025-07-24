@@ -5,13 +5,17 @@ import Login from './Login'
 import Register from './Registration'
 import Dashboard from './Dashboard'
 import Dashboard2 from './Dashboard2'
-import Dashboard3 from './Dashboard3'
+import TestPage from './TestPage'
 import Overview from './pages/Overview'
 import Vote from './pages/Vote'
+import Result from './pages/Result'
+import Wallet from './pages/Wallet'
+import Profile from './pages/Profile'
+import Setting from './pages/Setting'
+import Ballots from './pages/Ballots'
+import Voters from './pages/Voters'
 
 function App() {
-  // const [count, setCount] = useState(0)
-
   return (
     <Router>
       <div className='App'>
@@ -23,9 +27,15 @@ function App() {
             <Route index element={<Overview />} />
             <Route path='/dashboard/overview' element={<Overview />} />
             <Route path='/dashboard/vote' element={<Vote />} />
+            <Route path='/dashboard/result' element={<Result />} />
+            <Route path='/dashboard/wallet' element={<Wallet />} />
+            <Route path='/dashboard/profile' element={<Profile />} />
+            <Route path='/dashboard/setting' element={<Setting />} />
+            <Route path='/dashboard/ballots' element={<Ballots />} />
+            <Route path='/dashboard/voters' element={<Voters />} />
           </Route>
           <Route path='/dashboard2' element={<Dashboard2 />} />
-          <Route path='/dashboard3' element={<Dashboard3 />} />
+          <Route path='/testPage' element={<TestPage />} />
           
         </Routes>
       </div>

@@ -1,20 +1,18 @@
 import React, { useState } from 'react';
-import './Registration.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function Registration() {
-
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         password: '',
         confirmPassword: ''
-    })
+    });
     
-    const [error, setError] = useState('')
-    const navigate = useNavigate()
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -34,69 +32,83 @@ function Registration() {
 
         try {
             const { confirmPassword, ...requestData } = formData;
-
             const response = await axios.post('http://localhost:8080/api/v1/auth/register', requestData);
 
             if(response.status === 201 || response.status === 200) {
-                navigate('/login')
+                navigate('/login');
             } else {
                 const errorText = await response.data;
-                setError(errorText)
+                setError(errorText);
             }
         } catch(err) {
             if(axios.isAxiosError(err) && err.response){
-                setError(err.response.data.message || err.response.data)
+                setError(err.response.data.message || err.response.data);
             } else {
-                setError('An error occured during user registration')
+                setError('An error occurred during user registration');
             }
         }
-    }
+    };
+
+    const inputStyle = "w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors";
+    const socialButtonStyle = "w-full flex items-center justify-center py-2.5 px-4 rounded-lg text-white font-semibold transition-colors";
 
     return (
-        <div className='register-container'>
-            <div className='register-page'>
-                <form onSubmit={handleSubmit}>
-                    <h1>Sign Up Free</h1>
-                    <p>Please fill in the form to create an account</p>
-                    <div className='form-row'>
-                        <div className='form-group'>
-                            <label htmlFor='firstName'>First Name</label>
-                            <input type='text' id='firstName' name='firstName'  
-                                    value={formData.firstName} onChange={handleChange} required/>
+        <div className='flex justify-center items-center w-full min-h-screen bg-gray-300 p-4'>
+            <div className='w-full max-w-lg p-8 space-y-6 bg-white rounded-2xl shadow-lg'>
+                <div className="text-center">
+                    <h1 className='text-3xl font-bold text-gray-900'>Sign Up Free</h1>
+                    <p className="mt-2 text-gray-600">Please fill in the form to create an account</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {/* First Name & Last Name (Responsive layout) */}
+                    <div className='flex flex-col sm:flex-row gap-4'>
+                        <div className='w-full sm:w-1/2'>
+                            <label htmlFor='firstName' className="block mb-2 text-left text-sm font-medium text-gray-700">First Name</label>
+                            <input type='text' id='firstName' name='firstName' value={formData.firstName} onChange={handleChange} required className={inputStyle} />
                         </div>
-                        <div className='form-group'>
-                            <label htmlFor='lastName'>Last Name</label>
-                            <input type='text' id='lastName' name='lastName'
-                                    value={formData.lastName} onChange={handleChange} required/>
+                        <div className='w-full sm:w-1/2'>
+                            <label htmlFor='lastName' className="block mb-2 text-left text-sm font-medium text-gray-700">Last Name</label>
+                            <input type='text' id='lastName' name='lastName' value={formData.lastName} onChange={handleChange} required className={inputStyle} />
                         </div>
                     </div>
-                    <div className='form-group'>
-                        <label htmlFor='email'>Email</label>
-                        <input type='email' id='email' name='email'
-                                value={formData.email} onChange={handleChange} required/>
+                    
+                    <div>
+                        <label htmlFor='email' className="block mb-2 text-left text-sm font-medium text-gray-700">Email</label>
+                        <input type='email' id='email' name='email' value={formData.email} onChange={handleChange} required className={inputStyle} />
                     </div>
-                    <div className='form-group'>
-                        <label htmlFor='password'>Password</label>
-                        <input type='password' id='password' name='password'
-                                value={formData.password} onChange={handleChange} required/>
+
+                    <div>
+                        <label htmlFor='password' className="block mb-2 text-left text-sm font-medium text-gray-700">Password</label>
+                        <input type='password' id='password' name='password' value={formData.password} onChange={handleChange} required className={inputStyle} />
                     </div>
-                    <div className='form-group'>
-                        <label htmlFor='confirm-password'>Confirm Password</label>
-                        <input type='password' id='confirm-password' name='confirm-password'
-                                value={formData.confirmPassword} onChange={handleChange} required/>
+
+                    <div>
+                        <label htmlFor='confirmPassword' className="block mb-2 text-left text-sm font-medium text-gray-700">Confirm Password</label>
+                        <input type='password' id='confirmPassword' name='confirmPassword' value={formData.confirmPassword} onChange={handleChange} required className={inputStyle} />
                     </div>
-                    <button type='submit'>Sign Up</button>
-                    <p className='or'>Or</p>
-                    <button type='button' className='google-login'>Sign Up with Google</button>
-                    <button type='button' className='facebook-login'>Sign Up with Facebook</button>
-                    <button type='button' className='github-login'>Sign Up with GitHub</button>
-                    <p className='login-link'>
-                        Already have an account? <a href='/login'>Log in here</a>
+
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+                    <button type='submit' className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">Sign Up</button>
+                    
+                    <div className="my-4 flex items-center before:flex-1 before:border-t before:border-gray-300 after:flex-1 after:border-t after:border-gray-300">
+                        <p className="text-center text-sm text-gray-500 mx-4">Or</p>
+                    </div>
+
+                    <div className="space-y-3">
+                        <button type='button' className={`${socialButtonStyle} bg-[#db4437] hover:bg-[#c1351d]`}>Sign Up with Google</button>
+                        <button type='button' className={`${socialButtonStyle} bg-[#3b5998] hover:bg-[#2d4373]`}>Sign Up with Facebook</button>
+                        <button type='button' className={`${socialButtonStyle} bg-[#333] hover:bg-[#222]`}>Sign Up with GitHub</button>
+                    </div>
+
+                    <p className='text-center text-sm text-gray-600'>
+                        Already have an account? <a href='/login' className="font-medium text-blue-600 hover:underline">Log in here</a>
                     </p>
                 </form>
             </div>
         </div>
-    )
+    );
 }
 
 export default Registration;

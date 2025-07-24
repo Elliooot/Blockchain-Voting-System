@@ -5,87 +5,158 @@ import {
     Analytics as AnalyticsIcon,
     Wallet as WalletIcon,
     AccountBox as AccountBoxIcon,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    ListAlt as VotersIcon,
 } from '@mui/icons-material';
-import { AppProvider, DashboardHeader, DashboardLayout } from '@toolpad/core';
+import MenuIcon from '@mui/icons-material/Menu';
+import MuiDrawer from '@mui/material/Drawer';
+import { Box, CssBaseline, Divider, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, styled, ThemeProvider, Toolbar, Typography, type Theme } from '@mui/material';
 import { createTheme } from '@mui/material';
 
-import { Outlet, Route, Routes } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
+import type { CSSObject } from '@emotion/react';
+
+const drawerWidth = 240;
+
+const openedMixin = (theme: Theme): CSSObject => ({
+    width: drawerWidth,
+    transition: theme.transitions.create('width', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.enteringScreen,
+    }),
+    overflowX: 'hidden',
+});
+
+const closedMixin = (theme: Theme): CSSObject => ({
+    transition: theme.transitions.create('width', {
+        easing: theme.transitions.easing.sharp,
+        duration: theme.transitions.duration.enteringScreen,
+    }),
+    overflowX: 'hidden',
+    width: `calc(${theme.spacing(7)} + 1px)`,
+    [theme.breakpoints.up('sm')]: {
+        width: `calc(${theme.spacing(8)} + 1px)`,
+    },
+});
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    padding: theme.spacing(0, 1),
+    // necessary for content to be below app bar
+    ...theme.mixins.toolbar,
+}))
+
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open'})(
+    ({ theme, open }) => ({
+        width: drawerWidth,
+        flexShrink: 0,
+        whiteSpace: 'nowrap',
+        boxSizing: 'border-box',
+        ...(open && {
+            ...openedMixin(theme),
+            '& .MuiDrawer-paper': openedMixin(theme),
+        }),
+        ...(!open && {
+            ...closedMixin(theme),
+            '& .MuiDrawer-paper': closedMixin(theme),
+        }),
+    }),
+);
+
+const navigationItemsVoter = [
+    { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard/overview' },
+    { text: 'Vote', icon: <HowToVoteIcon />, path: '/dashboard/vote' },
+    { text: 'Result', icon: <AnalyticsIcon />, path: '/dashboard/result' },
+    { text: 'Wallet', icon: <WalletIcon />, path: '/dashboard/wallet' },
+    { text: 'Profile', icon: <AccountBoxIcon />, path: '/dashboard/profile' },
+    { text: 'Setting', icon: <SettingsIcon />, path: '/dashboard/setting'},
+]
+
+const navigationItemsAdmin = [
+    { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard/overview' },
+    { text: 'Ballots', icon: <HowToVoteIcon />, path: '/dashboard/ballots' },
+    { text: 'Voters', icon: <VotersIcon />, path: '/dashboard/voters' },
+    { text: 'Wallet', icon: <WalletIcon />, path: '/dashboard/wallet' },
+    { text: 'Profile', icon: <AccountBoxIcon />, path: '/dashboard/profile' },
+    { text: 'Setting', icon: <SettingsIcon />, path: '/dashboard/setting'},
+]
 
 const theme = createTheme({
     palette: {
-    // text: {
-    //   primary: '#ff0000', 
-    // },
-    background: {
-      paper: '#f0f0f0',
+        background: {
+            paper: '#d3d3d3',
+        },
     },
-  },
-  components: {
-    MuiAppBar: {
-        styleOverrides: {
-            root: {
-                color: '#ff0000'
-            }
-        }
-    }
-  }
 });
 
 function Dashboard() {
+    const [open, setOpen] = useState(true);
+
+    const user = {
+        name:'John Doe',
+        role:'admin'
+    }
+
+    const handleToggleDrawer = () => {
+        setOpen(!open);
+    }
+
+    const currentNavItems = user.role.includes('admin') ? navigationItemsAdmin : navigationItemsVoter;
+
     return (
-        <AppProvider
-            navigation={[
-                {
-                segment: 'dashboard/overview',
-                title: 'Overview',
-                icon: <DashboardIcon />,
-                },
-                {
-                segment: 'dashboard/vote',
-                title: 'Vote',
-                icon: <HowToVoteIcon />,
-                },
-                {
-                segment: 'dashboard/result',
-                title: 'Result',
-                icon: <AnalyticsIcon />,
-                },
-                {
-                segment: 'dashboard/wallet',
-                title: 'Wallet',
-                icon: <WalletIcon />,
-                },
-                {
-                segment: 'dashboard/profile',
-                title: 'Profile',
-                icon: <AccountBoxIcon />,
-                },
-                {
-                segment: 'dashboard/setting',
-                title: 'Setting',
-                icon: <SettingsIcon />,
-                },
-            ]}
-            branding={{
-                title: 'Voting',
-                homeUrl: '/dashboard',
-                // logo: <FavIcon />
-            }}
-            // router={router}
-            theme={theme}
-            // window={demoWindow}
-        >
-            <DashboardLayout
-                sidebarExpandedWidth={280}>
-                
-                {/* <DemoPageContent pathname={router.pathname} /> */}
-                
-                <main style={{ padding: '24px'}}>
+        <ThemeProvider theme={theme}>
+            <Box sx={{ display: 'flex' }}>
+                <CssBaseline />
+                <Drawer variant="permanent" open={open}>
+                    <DrawerHeader sx={{ justifyContent: open ? 'flex-end' : 'center' }}>
+                        <IconButton 
+                            className="w-10" 
+                            onClick={handleToggleDrawer} 
+                            sx={{
+                                position: 'fixed',
+                                top:10,
+                                left:10,
+                                zIndex:1201,
+                            }}>
+                            <MenuIcon />
+                        </IconButton>
+                    </DrawerHeader>
+                    <Divider />
+                    <List>
+                        {currentNavItems.map((item) => (
+                            <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
+                                <ListItemButton
+                                    component={Link}
+                                    to={item.path}
+                                    sx={{
+                                        minHeight: 48,
+                                        justifyContent: open ? 'initial' : 'center',
+                                        px: 2.5,
+                                    }}
+                                >
+                                    <ListItemIcon
+                                        sx={{
+                                        minWidth: 0,
+                                        mr: open ? 3 : 'auto',
+                                        justifyContent: 'center',
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </ListItemIcon>
+                                    <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                                </ListItemButton>
+                            </ListItem>
+                        ))}
+                    </List>
+                </Drawer>
+                <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
+                    <DrawerHeader />
                     <Outlet />
-                </main>
-            </DashboardLayout>        
-        </AppProvider>
+                </Box>
+            </Box>
+        </ThemeProvider>
     )
 }
 
