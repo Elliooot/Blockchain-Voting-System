@@ -13,6 +13,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -27,13 +28,14 @@ import lombok.NoArgsConstructor;
 @Table(name = "\"user\"")
 public class User implements UserDetails{
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(name = "user_id")
     private Integer id;
     private String firstName;
     private String lastName;
     private String email;
     private String password;
+    private String passwordHash;
 
     @Column(name = "wallet_address", nullable = true, length = 255, unique = true)
     private String walletAddress;

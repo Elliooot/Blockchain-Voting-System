@@ -8,7 +8,8 @@ function Registration() {
         lastName: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        role: ''
     });
     
     const [error, setError] = useState('');
@@ -39,6 +40,7 @@ function Registration() {
             } else {
                 const errorText = await response.data;
                 setError(errorText);
+                console.error(errorText);
             }
         } catch(err) {
             if(axios.isAxiosError(err) && err.response){
@@ -49,7 +51,7 @@ function Registration() {
         }
     };
 
-    const inputStyle = "w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors";
+    const inputStyle = "w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900";
     const socialButtonStyle = "w-full flex items-center justify-center py-2.5 px-4 rounded-lg text-white font-semibold transition-colors";
 
     return (
@@ -89,6 +91,17 @@ function Registration() {
                     </div>
 
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
+                    <div className='flex flex-col sm:flex-row gap-4'>
+                        <label className="flex items-center space-x-3">
+                            <input type="radio" id='roleVoter' name='role' value="Voter" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
+                            <span className="text-gray-900 font-medium">Voter</span>
+                        </label>
+                        <label className="flex items-center space-x-3">
+                            <input type="radio" id='roleAdmin' name='role' value="ElectoralAdmin" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
+                            <span className="text-gray-900 font-medium">Electoral Admin</span>
+                        </label>
+                    </div>
 
                     <button type='submit' className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">Sign Up</button>
                     
