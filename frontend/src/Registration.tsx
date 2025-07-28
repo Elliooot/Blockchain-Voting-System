@@ -90,8 +90,6 @@ function Registration() {
                         <input type='password' id='confirmPassword' name='confirmPassword' value={formData.confirmPassword} onChange={handleChange} required className={inputStyle} />
                     </div>
 
-                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
-
                     <div className='flex flex-col sm:flex-row gap-4'>
                         <label className="flex items-center space-x-3">
                             <input type="radio" id='roleVoter' name='role' value="Voter" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
@@ -103,6 +101,8 @@ function Registration() {
                         </label>
                     </div>
 
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+                    
                     <button type='submit' className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">Sign Up</button>
                     
                     <div className="my-4 flex items-center before:flex-1 before:border-t before:border-gray-300 after:flex-1 after:border-t after:border-gray-300">

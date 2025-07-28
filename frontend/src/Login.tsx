@@ -1,4 +1,57 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useAuth } from './contexts/AuthContext';
+
 function Login() {
+    const [formData, setFormData] = useState({
+        email: '',
+        password: ''
+    });
+
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
+
+    const { login } = useAuth();
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        setError('');
+
+        try {
+            const response = await axios.post('http://localhost:8080/api/v1/auth/authenticate', formData);
+            console.log(response);
+
+            const token = response.data.token;
+
+            if(token) { // response.status === 200
+                login(token);
+
+                // Set the global header of axios, all subsequent requests will automatically carry the token
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+                navigate('/dashboard');
+            } else {
+                setError('Login successful, but no authentication token was received.');
+            }
+        } catch(err) {
+            // Handle all error (Network issue, status 4xx or 5xx)
+            if(axios.isAxiosError(err) && err.response) {
+                setError(err.response.data.message || 'Email or password is incorrect');
+            } else {
+                setError('EA network error occurred. Please try again.');
+            }
+        }
+    }
+
     return (
         <div className='flex justify-center items-center w-full min-h-screen bg-gray-300'>
             <div className='w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-lg'>
@@ -6,7 +59,7 @@ function Login() {
                     <h1 className='text-3xl font-bold text-gray-900'>Welcome Back</h1>
                     <p className="mt-2 text-gray-600">Please log in to continue</p>
                 </div>
-                <form className="space-y-6">
+                <form onSubmit={handleLogin} className="space-y-6">
                     <div>
                         <label htmlFor='email' className="block mb-2 text-left text-sm font-medium text-gray-700">Email</label>
                         <input 
@@ -14,7 +67,8 @@ function Login() {
                             id='email' 
                             name='email' 
                             required 
-                            className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                            onChange={handleChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
                         />
                     </div>
                     <div>
@@ -24,7 +78,8 @@ function Login() {
                             id='password' 
                             name='password' 
                             required 
-                            className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                            onChange={handleChange}
+                            className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
                         />
                     </div>
                     <div className='flex items-center justify-between'>
@@ -39,6 +94,9 @@ function Login() {
                         </div>
                         <a href='/forgot-password' className="text-sm text-blue-600 hover:underline">Forgot Password?</a>
                     </div>
+
+                    {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+
                     <button 
                         type='submit'
                         className="w-full py-2.5 px-4 border-none rounded-lg bg-blue-600 text-white font-semibold cursor-pointer hover:bg-blue-700 transition-colors"

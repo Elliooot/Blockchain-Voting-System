@@ -14,30 +14,36 @@ import Profile from './pages/Profile'
 import Setting from './pages/Setting'
 import Ballots from './pages/Ballots'
 import Voters from './pages/Voters'
+import ProtectRoute from './utils/ProtectedRoute'
+import { AuthProvider } from './contexts/AuthContext'
 
 function App() {
   return (
     <Router>
       <div className='App'>
-        <Routes>
-          <Route path='/' element={<Homepage />} />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
-          <Route path='/dashboard' element={<Dashboard />}>
-            <Route index element={<Overview />} />
-            <Route path='/dashboard/overview' element={<Overview />} />
-            <Route path='/dashboard/vote' element={<Vote />} />
-            <Route path='/dashboard/result' element={<Result />} />
-            <Route path='/dashboard/wallet' element={<Wallet />} />
-            <Route path='/dashboard/profile' element={<Profile />} />
-            <Route path='/dashboard/setting' element={<Setting />} />
-            <Route path='/dashboard/ballots' element={<Ballots />} />
-            <Route path='/dashboard/voters' element={<Voters />} />
-          </Route>
-          <Route path='/dashboard2' element={<Dashboard2 />} />
-          <Route path='/testPage' element={<TestPage />} />
-          
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path='/' element={<Homepage />} />
+            <Route path='/login' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+
+            <Route element={<ProtectRoute />}>
+              <Route path='/dashboard' element={<Dashboard />}>
+                <Route index element={<Overview />} />
+                <Route path='/dashboard/overview' element={<Overview />} />
+                <Route path='/dashboard/vote' element={<Vote />} />
+                <Route path='/dashboard/result' element={<Result />} />
+                <Route path='/dashboard/wallet' element={<Wallet />} />
+                <Route path='/dashboard/profile' element={<Profile />} />
+                <Route path='/dashboard/setting' element={<Setting />} />
+                <Route path='/dashboard/ballots' element={<Ballots />} />
+                <Route path='/dashboard/voters' element={<Voters />} />
+              </Route>
+            </Route>
+            <Route path='/dashboard2' element={<Dashboard2 />} />
+            <Route path='/testPage' element={<TestPage />} />
+          </Routes>
+        </AuthProvider>
       </div>
     </Router>
   )

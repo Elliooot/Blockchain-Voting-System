@@ -7,14 +7,16 @@ import {
     AccountBox as AccountBoxIcon,
     Settings as SettingsIcon,
     ListAlt as VotersIcon,
+    Logout as LogoutIcon
 } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
 import MuiDrawer from '@mui/material/Drawer';
-import { Box, CssBaseline, Divider, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, styled, ThemeProvider, Toolbar, Typography, type Theme } from '@mui/material';
+import { Box, CssBaseline, Divider, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, styled, ThemeProvider, type Theme } from '@mui/material';
 import { createTheme } from '@mui/material';
 
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
 import type { CSSObject } from '@emotion/react';
+import { useAuth } from './contexts/AuthContext';
 
 const drawerWidth = 240;
 
@@ -93,17 +95,19 @@ const theme = createTheme({
 
 function Dashboard() {
     const [open, setOpen] = useState(true);
-
-    const user = {
-        name:'John Doe',
-        role:'admin'
-    }
+    const navigate = useNavigate();
+    const { user, logout } = useAuth();
 
     const handleToggleDrawer = () => {
         setOpen(!open);
     }
 
-    const currentNavItems = user.role.includes('admin') ? navigationItemsAdmin : navigationItemsVoter;
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    }
+
+    const currentNavItems = user?.role.includes('admin') ? navigationItemsAdmin : navigationItemsVoter;
 
     return (
         <ThemeProvider theme={theme}>
@@ -124,7 +128,11 @@ function Dashboard() {
                         </IconButton>
                     </DrawerHeader>
                     <Divider />
-                    <List>
+                    <List sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        height: '100%'
+                    }}>
                         {currentNavItems.map((item) => (
                             <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
                                 <ListItemButton
@@ -149,6 +157,27 @@ function Dashboard() {
                                 </ListItemButton>
                             </ListItem>
                         ))}
+                        <ListItem key="Logout" disablePadding sx={{ display: 'block' }} className='mt-auto'>
+                            <ListItemButton
+                                onClick={handleLogout}
+                                sx={{
+                                    minHeight: 48,
+                                    justifyContent: open ? 'initial' : 'center',
+                                    px: 2.5,
+                                }}
+                            >
+                                <ListItemIcon
+                                    sx={{
+                                        minWidth: 0,
+                                        mr: open ? 3 : 'auto',
+                                        justifyContent: 'center',
+                                    }}
+                                >
+                                    <LogoutIcon />
+                                </ListItemIcon>
+                                <ListItemText primary="Logout" sx={{ opacity: open ? 1 : 0 }} />
+                            </ListItemButton>
+                        </ListItem>
                     </List>
                 </Drawer>
                 <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
