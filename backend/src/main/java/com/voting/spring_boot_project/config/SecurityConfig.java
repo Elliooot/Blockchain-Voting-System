@@ -31,21 +31,24 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("🔧 SecurityConfig - Configuring security filter chain");
+        
         http
-            .csrf(csrf -> csrf.disable()) // 1. CSRF protection is disabled
+            .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
-            .authorizeHttpRequests(auth -> auth // 2. Authorization rule setup
-                .requestMatchers("/api/v1/auth/**") // 3. Define specific paths if needed
-                .permitAll()
-                .anyRequest()
-                .authenticated() // 4. All other requests require authentication
-            )
+            .authorizeHttpRequests(auth -> {
+                System.out.println("🛡️ SecurityConfig - Setting up authorization rules");
+                auth.requestMatchers("/api/v1/auth/**").permitAll();
+                auth.requestMatchers("/api/ballots/**").authenticated();
+                auth.anyRequest().authenticated();
+            })
             .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // 5. Session management
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            .authenticationProvider(authenticationProvider) // 6. Set AuthenticationProvider
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // 7. Add custom filter
+            .authenticationProvider(authenticationProvider)
+            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
+        System.out.println("✅ SecurityConfig - Filter chain configured successfully");
         return http.build();
     }
 

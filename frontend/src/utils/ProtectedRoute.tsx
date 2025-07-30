@@ -3,17 +3,13 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 const ProtectRoute: React.FC = () => {
-    const { isAuthenticated, isLoading } = useAuth();
+    const {isAuthenticated} = useAuth();
 
-    if (isLoading) {
-        return <div>Loading...</div>;
+    if(!isAuthenticated){
+        return <Navigate to={"/login"} replace />
     }
 
-    if (!isAuthenticated) {
-        return <Navigate to={"/login"} replace />;
-    }
-
-    return <Outlet />;
-};
+    return <Outlet />
+}
 
 export default ProtectRoute;

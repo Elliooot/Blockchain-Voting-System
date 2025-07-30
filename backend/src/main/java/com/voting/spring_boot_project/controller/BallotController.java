@@ -1,10 +1,13 @@
 package com.voting.spring_boot_project.controller;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +26,23 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/ballots")
 @RequiredArgsConstructor
 public class BallotController {
+
     private final BallotService ballotService;
+
+    @GetMapping
+    public List<BallotResponse> getBallotsForCurrentUser() {
+        System.out.println("🎯 BallotController - getBallotsForCurrentUser() called");
+        System.out.println("🔍 BallotController - Current SecurityContext: " + 
+            SecurityContextHolder.getContext().getAuthentication());
+        
+        return ballotService.getBallotsForCurrentUser();
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<BallotResponse>> getAllBallots() {
+        List<BallotResponse> ballots = ballotService.getAllBallots();
+        return ResponseEntity.ok(ballots);
+    }
 
     @PostMapping("/create")
     public ResponseEntity<BallotResponse> createBallot(

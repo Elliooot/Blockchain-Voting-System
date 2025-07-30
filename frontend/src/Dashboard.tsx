@@ -107,7 +107,7 @@ function Dashboard() {
         navigate('/');
     }
 
-    const currentNavItems = user?.role.includes('admin') ? navigationItemsAdmin : navigationItemsVoter;
+    const currentNavItems = user?.role.includes('Admin') ? navigationItemsAdmin : navigationItemsVoter;
 
     return (
         <ThemeProvider theme={theme}>
