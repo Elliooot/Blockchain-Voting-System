@@ -1,5 +1,7 @@
 package com.voting.spring_boot_project.dto;
 
+import java.util.Date;
+
 import com.voting.spring_boot_project.entity.Role;
 
 import jakarta.persistence.EnumType;
@@ -26,6 +28,9 @@ public class RegisterRequest {
     private String email;
     @NotBlank(message = "Password is required")
     private String password;
+
+    private Date dateOfBirth;
+    private String gender;
 
     @Enumerated(EnumType.STRING)
     private Role role;

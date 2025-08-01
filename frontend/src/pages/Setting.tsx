@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import Switch from '@mui/material/Switch';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const label = { inputProps: { 'aria-label': 'Switch demo' } };
 
@@ -21,12 +23,27 @@ const label = { inputProps: { 'aria-label': 'Switch demo' } };
 // };
 
 function Setting() {
+  const navigate = useNavigate();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [language, setLanguage] = useState('en');
   const [showVotingResults, setShowVotingResults] = useState(true);
 
   const handlePasswordChange = () => {
     alert('Change Password button clicked!');
+  };
+
+  const { deleteAccount } = useAuth();
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        try {
+          deleteAccount();
+          alert('Account deleted successfully!');
+          navigate('/');
+        } catch (error) {
+          alert('Failed to delete account. Please try again.');                  
+      }
+    }
   };
 
   return (
@@ -37,10 +54,9 @@ function Setting() {
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           
-          {/* 1. Dark/Light Mode */}
           <div className="p-6 flex justify-between items-center border-b border-gray-200">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Dark/Light Mode</h3>
+              <h3 className="text-lg font-semibold text-left text-gray-800">Dark/Light Mode</h3>
               <p className="text-sm text-gray-500">Enable dark mode for the interface.</p>
             </div>
             {/* <SettingSwitch checked={isDarkMode} onChange={setIsDarkMode} /> */}
@@ -49,10 +65,9 @@ function Setting() {
 
           </div>
 
-          {/* 2. Language */}
           <div className="p-6 flex justify-between items-center border-b border-gray-200">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Language</h3>
+              <h3 className="text-lg font-semibold text-left text-gray-800">Language</h3>
               <p className="text-sm text-gray-500">Choose your preferred language.</p>
             </div>
             <select
@@ -67,10 +82,9 @@ function Setting() {
             </select>
           </div>
 
-          {/* 3. Change Password */}
           <div className="p-6 flex justify-between items-center border-b border-gray-200">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Account Security</h3>
+              <h3 className="text-lg font-semibold text-left text-gray-800">Account Security</h3>
               <p className="text-sm text-gray-500">Change your account password.</p>
             </div>
             <button
@@ -81,14 +95,26 @@ function Setting() {
             </button>
           </div>
 
-          {/* 4. Voting Display Strategy */}
           <div className="p-6 flex justify-between items-center">
             <div>
-              <h3 className="text-lg font-semibold text-gray-800">Voting Display Strategy</h3>
+              <h3 className="text-lg font-semibold text-left text-gray-800">Voting Display Strategy</h3>
               <p className="text-sm text-gray-500">Show or hide voting results by default.</p>
             </div>
             {/* <SettingSwitch checked={showVotingResults} onChange={setShowVotingResults} /> */}
             <Switch {...label} defaultChecked={showVotingResults} onChange={() => setShowVotingResults(!showVotingResults)} />
+          </div>
+
+          <div className="p-6 flex justify-between items-center border-t border-gray-200">
+            <div>
+              <h3 className="text-lg font-semibold text-left text-red-700">Delete Account</h3>
+              <p className="text-sm text-gray-500">Permanently delete your account and all associated data.</p>
+            </div>
+            <button
+              onClick={ handleDeleteAccount }
+              className="px-4 py-2 w-40 bg-red-600 text-white font-semibold rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+            >
+              Delete Account
+            </button>
           </div>
 
         </div>

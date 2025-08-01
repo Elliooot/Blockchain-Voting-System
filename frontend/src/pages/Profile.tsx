@@ -1,4 +1,12 @@
+import { useAuth } from "../contexts/AuthContext";
+
 function Profile() {
+    const { user } = useAuth();
+    console.log("Profile user:", user);
+    const dob = new Date(user?.dateOfBirth || 0);
+    console.log("DOB:", dob);
+    const formattedDob = dob.toISOString().slice(0, 10);
+
     return (
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
             <div className="max-w-4xl mx-auto">
@@ -11,6 +19,12 @@ function Profile() {
                     <div className="flex items-start gap-8">
 
                         <div className="flex-grow">
+
+                            <div className="w-1/3">
+                                <label htmlFor="userId" className="block text-left text-gray-700 text-sm font-bold mb-2">
+                                    User ID: {user?.userId || ""}
+                                </label>
+                            </div>
                             
                             <div className="flex gap-4 mb-4">
                                 <div className="w-1/2">
@@ -20,7 +34,7 @@ function Profile() {
                                     <input 
                                     type="text" 
                                     id="first-name" 
-                                    defaultValue="John" 
+                                    value={user?.firstName || ""}
                                     readOnly
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100" 
                                     />
@@ -32,7 +46,7 @@ function Profile() {
                                     <input 
                                     type="text" 
                                     id="last-name" 
-                                    defaultValue="Doe"
+                                    value={user?.lastName || ""}
                                     readOnly
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100"
                                     />
@@ -47,19 +61,19 @@ function Profile() {
                                     <input 
                                         type="email" 
                                         id="email" 
-                                        defaultValue="john.doe@example.com"
+                                        value={user?.email || ""}
                                         readOnly
                                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100"
                                     />
                                 </div>
                                 <div className="w-1/3">
                                     <label htmlFor="age" className="block text-gray-700 text-sm font-bold mb-2">
-                                        Age
+                                        Date of Birth
                                     </label>
                                     <input
-                                        type="number"
-                                        id="age"
-                                        defaultValue="30"
+                                        type="date"
+                                        id="dateOfBirth"
+                                        value={formattedDob}
                                         readOnly
                                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100" 
                                     />
@@ -73,16 +87,18 @@ function Profile() {
                                 <input 
                                     type="text"
                                     id="gender"
-                                    defaultValue="Male"
+                                    value={user?.gender || ""}
                                     readOnly
                                     className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100" 
                                 />
                             </div>
+
                             <div>
                                 <label htmlFor=""></label>
                             </div>
                         </div>
 
+                        {/* Avatar */}
                         <div className="flex-shrink-0">
                             <img className="rounded-full w-36 h-36 object-cover border-4 border-white shadow-sm" src="" alt="User avatar" />
                         </div>

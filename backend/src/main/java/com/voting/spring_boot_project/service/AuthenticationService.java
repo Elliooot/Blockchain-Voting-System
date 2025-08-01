@@ -29,6 +29,8 @@ public class AuthenticationService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .dateOfBirth(request.getDateOfBirth())
+                .gender(request.getGender())
                 .role(request.getRole())
                 .build();
 
@@ -48,7 +50,10 @@ public class AuthenticationService {
         );
         var user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow();
+        
+        System.out.println("🔵 [AuthService] Generating JWT token...");
         var jwtToken = jwtService.generateToken(user);
+        System.out.println("🔵 [AuthService] Token generated successfully");
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();

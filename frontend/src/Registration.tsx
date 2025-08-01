@@ -9,6 +9,8 @@ function Registration() {
         email: '',
         password: '',
         confirmPassword: '',
+        dateOfBirth: '',
+        gender: '',
         role: ''
     });
     
@@ -63,7 +65,6 @@ function Registration() {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* First Name & Last Name (Responsive layout) */}
                     <div className='flex flex-col sm:flex-row gap-4'>
                         <div className='w-full sm:w-1/2'>
                             <label htmlFor='firstName' className="block mb-2 text-left text-sm font-medium text-gray-700">First Name</label>
@@ -90,16 +91,43 @@ function Registration() {
                         <input type='password' id='confirmPassword' name='confirmPassword' value={formData.confirmPassword} onChange={handleChange} required className={inputStyle} />
                     </div>
 
-                    <div className='flex flex-col sm:flex-row gap-4'>
-                        <label className="flex items-center space-x-3">
-                            <input type="radio" id='roleVoter' name='role' value="Voter" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
-                            <span className="text-gray-900 font-medium">Voter</span>
-                        </label>
-                        <label className="flex items-center space-x-3">
-                            <input type="radio" id='roleAdmin' name='role' value="ElectoralAdmin" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
-                            <span className="text-gray-900 font-medium">Electoral Admin</span>
-                        </label>
+                    <div>
+                        <label className="block mb-2 text-left text-sm font-medium text-gray-700">Gender</label>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                            <label className="flex items-center space-x-3">
+                                <input type="radio" id='genderMale' name='gender' value="male" onChange={handleChange} className="form-radio h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300" required />
+                                <span className="text-gray-900 font-medium">Male</span>
+                            </label>
+                            <label className="flex items-center space-x-3">
+                                <input type="radio" id='genderFemale' name='gender' value="female" onChange={handleChange} className="form-radio h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300" required />
+                                <span className="text-gray-900 font-medium">Female</span>
+                            </label>
+                            <label className="flex items-center space-x-3">
+                                <input type="radio" id='genderOther' name='gender' value="other" onChange={handleChange} className="form-radio h-5 w-5 text-blue-500 focus:ring-blue-500 border-gray-300" required />
+                                <span className="text-gray-900 font-medium">Other</span>
+                            </label>
+                        </div>
                     </div>
+
+                    <div>
+                        <label htmlFor='dateOfBirth' className="block mb-2 text-left text-sm font-medium text-gray-700">Date of Birth</label>
+                        <input type='date' id='dateOfBirth' name='dateOfBirth' value={formData.dateOfBirth} onChange={handleChange} required className={inputStyle} />
+                    </div>
+
+                    <div>
+                        <label className="block mb-2 text-left text-sm font-medium text-gray-700">Role</label>
+                        <div className='flex flex-col sm:flex-row gap-4'>
+                            <label className="flex items-center space-x-3">
+                                <input type="radio" id='roleVoter' name='role' value="Voter" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
+                                <span className="text-gray-900 font-medium">Voter</span>
+                            </label>
+                            <label className="flex items-center space-x-3">
+                                <input type="radio" id='roleAdmin' name='role' value="ElectoralAdmin" onChange={handleChange} className="form-radio h-5 w-5 text-black focus:ring-black" required />
+                                <span className="text-gray-900 font-medium">Electoral Admin</span>
+                            </label>
+                        </div>
+                    </div>
+
 
                     {error && <p className="text-red-500 text-sm text-center">{error}</p>}
                     

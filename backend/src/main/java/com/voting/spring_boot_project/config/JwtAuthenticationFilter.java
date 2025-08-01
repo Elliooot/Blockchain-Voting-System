@@ -31,7 +31,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         
-        // --- 在方法最開始就加入 debug ---
         System.out.println("=================================");
         System.out.println("🌐 JWT Filter - Request URL: " + request.getRequestURL());
         System.out.println("🔧 JWT Filter - Request Method: " + request.getMethod());

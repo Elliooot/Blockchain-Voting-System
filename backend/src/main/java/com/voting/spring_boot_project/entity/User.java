@@ -1,6 +1,7 @@
 package com.voting.spring_boot_project.entity;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -36,6 +37,8 @@ public class User implements UserDetails{
     private String email;
     private String password;
     private String passwordHash;
+    private Date dateOfBirth;
+    private String gender;
 
     @Column(name = "wallet_address", nullable = true, length = 255, unique = true)
     private String walletAddress;

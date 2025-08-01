@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
+import com.voting.spring_boot_project.entity.User; // <-- 確保已 import
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -38,9 +40,25 @@ public class JwtService {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
+        System.out.println("Generating token for user: " + userDetails.getUsername());
+
+
+        if (userDetails instanceof User) {
+            User user = (User) userDetails;
+
+            extraClaims.put("firstName", user.getFirstName());
+            extraClaims.put("lastName", user.getLastName());
+            extraClaims.put("email", user.getEmail());
+            extraClaims.put("gender", user.getGender());
+            extraClaims.put("dateOfBirth", user.getDateOfBirth());
+            extraClaims.put("userId", user.getId());
+            System.out.println("Successfully put user details into extraClaims");
+        }
+
         userDetails.getAuthorities().stream()
                 .findFirst()
                 .ifPresent(authority -> extraClaims.put("role", authority.getAuthority()));
+        
         return generateToken(extraClaims, userDetails);
     }
 

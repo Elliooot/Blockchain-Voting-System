@@ -35,7 +35,6 @@ apiClient.interceptors.request.use(
     }
 );
 
-// 也在 response interceptor 中加入 debug
 apiClient.interceptors.response.use(
     (response) => {
         console.log("✅ API Response - Status:", response.status);
