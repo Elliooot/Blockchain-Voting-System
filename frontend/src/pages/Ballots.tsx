@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
 import { fetchBallots, createBallot } from '../api/apiService';
+import { useNavigate } from 'react-router-dom';
 
 interface ApiBallot {
   id: number;
@@ -92,6 +93,7 @@ function Ballots() {
   const [tasks, setTasks] = useState<BallotTask[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const loadBallots = useCallback(async () => {
     try {
@@ -124,21 +126,7 @@ function Ballots() {
   }, [loadBallots]);
 
   const handleCreateBallot = async () => {
-    try {
-        const newBallotData = {
-            title: `New Election #${Math.floor(Math.random() * 1000)}`, 
-            description: 'Detail for the new election.',
-            startTime: '',
-            duration: '',
-            option: ''
-        };
-        await createBallot(newBallotData);
-        alert('Ballot created successfully!');
-        await loadBallots();
-    } catch (error) {
-        console.error("Failed to create ballot: ", error);
-        alert("Error: Could not create the ballot.");
-    }
+    navigate('/dashboard/ballots/create');
   };
 
   const columns: BallotTask['status'][] = ['Pending', 'Active', 'Ended'];

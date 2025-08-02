@@ -53,7 +53,7 @@ export const createBallot = async (ballotData: object) => {
         const response = await apiClient.post('/ballots/create', ballotData);
         return response.data;
     } catch (error) {
-        console.error("Error creating ballot: " + error);
+        console.error("Failed to create ballot in apiService:", error);
         throw error;
     }
 };

@@ -1,21 +1,21 @@
 services:
-  spring-boot-project:
-    build: .
-    ports:
-      - "8080:8080"
-    networks:
-      - db
-    env_file:
-      - ./.env
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
-      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
-      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-    depends_on:
-      db:
-        condition: service_healthy
+  # spring-boot-project:
+  #   build: .
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - db
+  #   env_file:
+  #     - ./.env
+  #   environment:
+  #     - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB}
+  #     - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+  #     - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+  #     - APPLICATION_SECURITY_JWT_SECRET_KEY=${JWT_SECRET_KEY}
+  #     - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
 
   db:
     image: postgres:14

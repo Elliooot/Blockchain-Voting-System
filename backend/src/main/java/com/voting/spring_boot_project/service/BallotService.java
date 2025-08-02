@@ -28,7 +28,7 @@ public class BallotService {
     private final BallotRepository ballotRepository;
     private final UserRepository userRepository; // get the current user entity
 
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    // @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public List<BallotResponse> getAllBallots() {
         List<Ballot> ballots = ballotRepository.findAll();
         return ballots.stream()
@@ -78,6 +78,12 @@ public class BallotService {
     
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     public BallotResponse createBallot(CreateBallotRequest request) {
+        System.out.println("🚀 createBallot() method started");
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        System.out.println("🔐 [createBallot] Current authentication: " + auth);
+        System.out.println("👤 [createBallot] Principal: " + auth.getPrincipal());
+        System.out.println("🎫 [createBallot] Authorities: " + auth.getAuthorities());
         // Get authenticated user from the secure context
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(userEmail)

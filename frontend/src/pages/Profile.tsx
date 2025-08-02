@@ -2,9 +2,8 @@ import { useAuth } from "../contexts/AuthContext";
 
 function Profile() {
     const { user } = useAuth();
-    console.log("Profile user:", user);
+    // console.log("Profile user:", user);
     const dob = new Date(user?.dateOfBirth || 0);
-    console.log("DOB:", dob);
     const formattedDob = dob.toISOString().slice(0, 10);
 
     return (
@@ -28,7 +27,7 @@ function Profile() {
                             
                             <div className="flex gap-4 mb-4">
                                 <div className="w-1/2">
-                                    <label htmlFor="first-name" className="block text-gray-700 text-sm font-bold mb-2">
+                                    <label htmlFor="first-name" className="block text-gray-700 text-sm text-left font-bold mb-2">
                                         First Name
                                     </label>
                                     <input 
@@ -40,7 +39,7 @@ function Profile() {
                                     />
                                 </div>
                                 <div className="w-1/2">
-                                    <label htmlFor="last-name" className="block text-gray-700 text-sm font-bold mb-2">
+                                    <label htmlFor="last-name" className="block text-gray-700 text-sm text-left font-bold mb-2">
                                         Last Name
                                     </label>
                                     <input 
@@ -55,7 +54,7 @@ function Profile() {
 
                             <div className="flex gap-4 mb-4">
                                 <div className="w-2/3">
-                                    <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
+                                    <label htmlFor="email" className="block text-gray-700 text-sm text-left font-bold mb-2">
                                         Email
                                     </label>
                                     <input 
@@ -67,7 +66,7 @@ function Profile() {
                                     />
                                 </div>
                                 <div className="w-1/3">
-                                    <label htmlFor="age" className="block text-gray-700 text-sm font-bold mb-2">
+                                    <label htmlFor="age" className="block text-gray-700 text-sm text-left font-bold mb-2">
                                         Date of Birth
                                     </label>
                                     <input
@@ -81,7 +80,7 @@ function Profile() {
                             </div>
 
                             <div className="w-1/3">
-                                <label htmlFor="gender" className="block text-gray-700 text-sm font-bold mb-2">
+                                <label htmlFor="gender" className="block text-gray-700 text-sm text-left font-bold mb-2">
                                     Gender
                                 </label>
                                 <input 

@@ -53,8 +53,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         try {
             userEmail = jwtService.extractUsername(jwt);
             System.out.println("📧 JWT Filter - Extracted email: '" + userEmail + "'");
-            System.out.println("📧 JWT Filter - Email length: " + (userEmail != null ? userEmail.length() : "null"));
-            System.out.println("📧 JWT Filter - Email bytes: " + (userEmail != null ? java.util.Arrays.toString(userEmail.getBytes()) : "null"));
         } catch (Exception e) {
             System.out.println("❌ JWT Filter - Failed to extract email: " + e.getMessage());
             filterChain.doFilter(request, response);
@@ -64,12 +62,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                System.out.println("👤 JWT Filter - Loaded user: " + userDetails.getUsername());
-                System.out.println("🔐 JWT Filter - User authorities: " + userDetails.getAuthorities());
+                
+                System.out.println("✅ Filter loaded user details. Authorities found: " + userDetails.getAuthorities());
                 
                 if(jwtService.isTokenValid(jwt, userDetails)) {
-                    System.out.println("✅ JWT Filter - Token is valid");
-                    
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
@@ -78,8 +74,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     
-                    System.out.println("🔒 JWT Filter - SecurityContext set successfully");
-                    System.out.println("🎫 JWT Filter - Final authorities in context: " + 
+                    System.out.println("🔒 SecurityContext has been set. Final authorities in context: " + 
                         SecurityContextHolder.getContext().getAuthentication().getAuthorities());
                 } else {
                     System.out.println("❌ JWT Filter - Token is invalid");
