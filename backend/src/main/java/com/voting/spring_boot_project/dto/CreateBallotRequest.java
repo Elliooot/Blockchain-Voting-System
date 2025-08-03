@@ -21,4 +21,5 @@ public class CreateBallotRequest {
     private Date startTime;
     private Duration duration;
     private List<Option> options;
+    private List<Integer> qualifiedVoterIds;
 }

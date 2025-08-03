@@ -3,6 +3,7 @@ package com.voting.spring_boot_project.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.Instant;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -16,6 +17,7 @@ import com.voting.spring_boot_project.dto.UpdateBallotRequest;
 import com.voting.spring_boot_project.entity.Ballot;
 import com.voting.spring_boot_project.entity.Option;
 import com.voting.spring_boot_project.entity.Role;
+import com.voting.spring_boot_project.entity.Status;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
@@ -88,6 +90,11 @@ public class BallotService {
         String userEmail = SecurityContextHolder.getContext().getAuthentication().getName();
         User admin = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
+        
+        List<User> qualifiedVoters = new ArrayList<>();
+        if(request.getQualifiedVoterIds() != null && !request.getQualifiedVoterIds().isEmpty()){
+            qualifiedVoters = userRepository.findAllById(request.getQualifiedVoterIds());
+        }
 
         var ballot = Ballot.builder()
                 .admin(admin) // Use creditable user object
@@ -96,12 +103,9 @@ public class BallotService {
                 .startTime(request.getStartTime())
                 .duration(request.getDuration())
                 .options(request.getOptions())
+                .qualifiedVoters(qualifiedVoters)
+                .status(Status.Pending)
                 .build();
-
-        // if(request.getQualifiedVoterIds() != null && !request.getQualifiedVoterIds().isEmpty()){
-        //     List<User> qualifiedVoters = userRepository.findAllById(request.getQualifiedVoterIds());
-        //     ballot.setQualifiedVoters(qualifiedVoters);
-        // }
 
         Ballot createdballot = ballotRepository.save(ballot);
         return convertToBallotResponse(createdballot);
@@ -150,6 +154,10 @@ public class BallotService {
                 .map(this::convertToOptionResponse)
                 .collect(Collectors.toList());
 
+        List<Integer> qualifiedVotersId = ballot.getQualifiedVoters().stream()
+                .map(User::getId)
+                .toList();
+
         return BallotResponse.builder()
                 .id(ballot.getId())
                 .title(ballot.getTitle())
@@ -157,7 +165,8 @@ public class BallotService {
                 .startTime(ballot.getStartTime())
                 .duration(ballot.getDuration())
                 .options(optionResponses)
-                .status(ballot.getStatus())
+                .qualifiedVotersId(qualifiedVotersId)
+                .status(ballot.getCurrentStatus())
                 .build();
     }
 

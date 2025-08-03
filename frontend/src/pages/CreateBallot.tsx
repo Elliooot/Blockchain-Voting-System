@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowBack as ArrowBackIcon, Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { createBallot } from '../api/apiService';
+import { createBallot, searchVoterByEmail } from '../api/apiService';
 
 interface BallotOption {
   name: string;
   description: string;
+}
+
+interface Voter {
+  id: number;
+  email: string;
 }
 
 interface BallotFormData {
@@ -14,20 +19,27 @@ interface BallotFormData {
   startTime: string;
   duration: string;
   options: BallotOption[];
+  // qualifiedVoters: number[];
 }
 
 function CreateBallot() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 2. 新增 voterEmail state 來控制輸入框
+  const [voterEmail, setVoterEmail] = useState(''); 
+  const [isAddingVoter, setIsAddingVoter] = useState(false);
+
+  const [qualifiedVotersList, setQualifiedVotersList] = useState<Voter[]>([])
+
   const [formData, setFormData] = useState<BallotFormData>({
     title: '',
     description: '',
     startTime: '',
     duration: '',
-    options: [{ name: '', description: '' }]
+    options: [{ name: '', description: '' }],
   });
 
-  const handleInputChange = (field: keyof BallotFormData, value: string) => {
+  const handleInputChange = (field: keyof Omit<BallotFormData, 'options' | 'qualifiedVoters'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -56,13 +68,53 @@ function CreateBallot() {
     }
   };
 
+  const handleAddVoter = async () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!voterEmail || !emailRegex.test(voterEmail)) {
+      alert('Please enter a valid email.');
+      return;
+    }
+
+    if (qualifiedVotersList.some(v => v.email === voterEmail.toLowerCase())) {
+      alert('This voter has already been added.');
+      return;
+    }
+
+    console.log("XXX Adding voter with email:", voterEmail.toLowerCase());
+
+    setIsAddingVoter(true);
+    try {
+      const foundVoter: Voter = await searchVoterByEmail(voterEmail);
+
+      // Verify if api returns a valid voter object
+      if (foundVoter && foundVoter.id) {
+        setQualifiedVotersList(prev => [...prev, foundVoter]);
+        setVoterEmail('');
+      } else {
+        alert(`Error: No user found with the email "${voterEmail}".`);
+      }
+    } catch (error) {
+      console.error("An error occurred while searching for the voter:", error);
+      alert('An error occurred while searching for the voter.');
+    } finally {
+      setIsAddingVoter(false);
+    }
+  };
+
+  const handleRemoveVoter = (idToRemove: number) => {
+    setQualifiedVotersList(prev => prev.filter(voter => voter.id !== idToRemove));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
+    const qualifiedVoterIds = qualifiedVotersList.map(voter => voter.id);
+
     const payload = {
       ...formData,
-      duration: `PT${formData.duration}H`
+      duration: `PT${formData.duration}H`,
+      qualifiedVoterIds: qualifiedVoterIds, // Add Id list to payload
     };
 
     try {
@@ -224,6 +276,46 @@ function CreateBallot() {
                     </div>
                 ))}
                 </div>
+            </div>
+
+            <div>
+              <label className={labelStyle}>
+                Qualified Voters
+              </label>
+              <p className="text-xs text-gray-500 mb-2">Enter voter emails. Only these users will be able to vote.</p>
+              <div className="flex gap-2 mb-3">
+                <input
+                  type="email"
+                  value={voterEmail}
+                  onChange={(e) => setVoterEmail(e.target.value)}
+                  className={inputStyle}
+                  placeholder="voter@example.com"
+                  disabled={isAddingVoter}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddVoter(); } }}
+                />
+                <button
+                  type="button"
+                  onClick={handleAddVoter}
+                  disabled={isAddingVoter}
+                  className="flex-shrink-0 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  {isAddingVoter ? 'Adding...' : 'Add'}
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2 p-2 bg-gray-100 rounded-md min-h-[40px]">
+                {qualifiedVotersList.map((voter) => (
+                  <div key={voter.id} className="flex items-center gap-2 bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                    <span>{voter.email}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVoter(voter.id)}
+                      className="text-blue-600 hover:text-blue-800"
+                    >
+                      <DeleteIcon style={{ fontSize: '16px' }} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">

@@ -1,6 +1,7 @@
 package com.voting.spring_boot_project.entity;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -19,6 +20,7 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -65,5 +67,18 @@ public class Ballot {
 
     private String result;
 
+    @Transient // Not to map this method
+    public Status getCurrentStatus() {
+        Instant now = Instant.now();
+        Instant startTime = this.getStartTime().toInstant();
+        Instant endTime = startTime.plus(this.getDuration());
 
+        if (now.isBefore(startTime)) {
+            return Status.Pending;
+        } else if (now.isBefore(endTime)) {
+            return Status.Active;
+        } else {
+            return Status.Ended;
+        }
+    }
 }

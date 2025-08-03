@@ -22,6 +22,6 @@ public class BallotResponse {
     private Date startTime;
     private Duration duration;
     private List<OptionResponse> options;
+    private List<Integer> qualifiedVotersId;
     private Status status;
-    private String message;
 }

@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Edit as EditIcon, Add as AddIcon } from '@mui/icons-material';
+import { 
+    Edit as EditIcon, 
+    Add as AddIcon,
+    PushPin as PushPinIcon,
+    Note as NoteIcon,
+    Delete as DeleteIcon,
+    HowToVote as VoteIcon
+} from '@mui/icons-material';
 import { fetchBallots, createBallot } from '../api/apiService';
 import { useNavigate } from 'react-router-dom';
 
@@ -16,8 +23,8 @@ interface ApiBallot {
     voteCount: number;
     displayOrder: number;
   }>;
+  qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
-  message?: string;
 }
 
 interface BallotTask {
@@ -33,33 +40,55 @@ interface BallotTask {
     voteCount: number;
     displayOrder: number;
   }>;
+  qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
-  message?: string;
 }
 
-const statusDisplayMap = {
-  'Pending': 'Upcoming',
-  'Active': 'In Progress',
-  'Ended': 'Completed'
-} as const;
-
-const TaskCard = ({ title, description, options, status }: Omit<BallotTask, 'id' | 'startTime' | 'duration' | 'message'>) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleToggleExpand = () => {
-    setIsExpanded(!isExpanded);
+const TaskCard = ({ title, description, options, status }: Omit<BallotTask, 'id' | 'startTime' | 'duration' | 'qualifiedVoterIds'>) => {
+  const renderActions = () => {
+    const buttonStyle = "bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100";
+    
+    switch(status){
+      case 'Pending':
+        return (
+          <>
+            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Edit"><EditIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Delete"><DeleteIcon fontSize="small" /></button>
+          </>
+        );
+      case 'Active':
+        return (
+          <>
+            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle + " flex-1 justify-center"} title="Vote">
+              <VoteIcon fontSize="small" />
+              Vote
+            </button>
+          </>
+        );
+      case 'Ended':
+        return (
+          <>
+            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Delete"><DeleteIcon fontSize="small" /></button>
+          </>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
     <div className="bg-white mb-4 shadow-md p-4 rounded-lg">
-      <h2 className="text-gray-900 mb-2 font-semibold truncate" title={title}>
+      <h2 className="text-gray-900 text-left mb-2 font-semibold truncate" title={title}>
         {title}
       </h2>
       
-      <div 
-        className={`text-sm font-medium mb-4 text-gray-700 cursor-pointer ${isExpanded ? 'line-clamp-none' : 'line-clamp-3'}`}
-        onClick={handleToggleExpand}
-      >
+      <div className={"text-sm text-left font-medium mb-4 text-gray-700"}>
         {description}
       </div>
 
@@ -68,22 +97,9 @@ const TaskCard = ({ title, description, options, status }: Omit<BallotTask, 'id'
       </div>
       
       <div className="h-px bg-gray-200 mb-2" />
-
-      <div className="mb-2">
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          status === 'Pending' ? 'bg-blue-100 text-blue-800' :
-          status === 'Active' ? 'bg-green-100 text-green-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
-          {statusDisplayMap[status]}
-        </span>
-      </div>
       
-      <div className="flex gap-2">
-        <button className="bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100">+</button>
-        <button className="bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100">📅</button>
-        <EditIcon className="bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100" fontSize='large'></EditIcon>
-        <button className="bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100">📋</button>
+      <div className="flex gap-2 justify-start">
+        {renderActions()}
       </div>
     </div>
   );
@@ -109,7 +125,7 @@ function Ballots() {
             duration: ballot.duration,
             options: ballot.options,
             status: ballot.status,
-            message: ballot.message
+            qualifiedVoterIds: ballot.qualifiedVoterIds
         }));
 
         setTasks(formattedTasks);
