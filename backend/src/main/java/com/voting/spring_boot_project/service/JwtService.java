@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Value;
 
-import com.voting.spring_boot_project.entity.User; // <-- 確保已 import
+import com.voting.spring_boot_project.entity.User;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -91,13 +91,22 @@ public class JwtService {
         return extractClaim(token, Claims::getExpiration);
     }
 
+    // private Claims extractAllClaims(String token) {
+    //     return Jwts
+    //         .parser()
+    //         .verifyWith((SecretKey) getSignInKey())
+    //         .build()
+    //         .parseSignedClaims(token)
+    //         .getPayload();
+    // }
+
     private Claims extractAllClaims(String token) {
         return Jwts
             .parser()
-            .verifyWith((SecretKey) getSignInKey())
+            .setSigningKey(getSignInKey())
             .build()
-            .parseSignedClaims(token)
-            .getPayload();
+            .parseClaimsJws(token)
+            .getBody();
     }
 
     private Key getSignInKey() {

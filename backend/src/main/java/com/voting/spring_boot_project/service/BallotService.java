@@ -39,10 +39,8 @@ public class BallotService {
     }
 
     public List<BallotResponse> getBallotsForCurrentUser() {
-        // --- Debug Point 8: 檢查方法開始執行 ---
         System.out.println("🚀 getBallotsForCurrentUser() method started");
         
-        // --- Debug Point 9: 檢查 SecurityContext ---
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         System.out.println("🔐 Current authentication: " + auth);
         System.out.println("👤 Principal: " + auth.getPrincipal());
@@ -54,7 +52,6 @@ public class BallotService {
         User currentUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // --- Debug Point 10: 檢查使用者角色 ---
         System.out.println("👤 Found user: " + currentUser.getEmail());
         System.out.println("🎭 User role: " + currentUser.getRole());
         

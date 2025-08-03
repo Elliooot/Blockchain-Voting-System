@@ -121,7 +121,7 @@ contract Voting {
     //     emit VoteRecorded(msg.sender, _ballotId, _proposalId);
     // }
 
-    function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
+    function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){ // Commit a vote using a hash to achieve anonymous voting
         require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
         require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
         require(!ballots[_ballotId].commitments[_commitment], "Commitment already exists");
