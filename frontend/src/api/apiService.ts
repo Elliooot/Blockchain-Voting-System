@@ -66,6 +66,17 @@ export const fetchBallots = async () => {
     }
 };
 
+export const deleteBallot = async (ballotId: number) => {
+    try {
+        const response = await apiClient.delete('ballots/delete/' + ballotId);
+        console.log("Deleted ballot:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error deleting ballot: " + error);
+        throw error;
+    }
+};
+
 export const searchVoterByEmail = async (email: string) => {
     try {
         const response = await apiClient.get('/user/search?email=' + email);
@@ -73,6 +84,17 @@ export const searchVoterByEmail = async (email: string) => {
         return response.data;
     } catch (error) {
         console.log("Failed to get user: ", error);
+        throw error;
+    }
+}
+
+export const updateWalletAddress = async (walletAddress: string) => {
+    try {
+        const response = await apiClient.post('/user/update_wallet', { walletAddress });
+        console.log("Updated wallet address:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error updating wallet address: " + error);
         throw error;
     }
 }

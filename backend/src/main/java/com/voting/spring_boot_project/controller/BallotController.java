@@ -60,6 +60,7 @@ public class BallotController {
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Map<String, String>> deleteBallot(@PathVariable Integer id) {
+        System.out.println("🎯 BallotController - deleteBallot() called");
         ballotService.deleteBallot(id);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Ballot id: " + id + " delete successfully");

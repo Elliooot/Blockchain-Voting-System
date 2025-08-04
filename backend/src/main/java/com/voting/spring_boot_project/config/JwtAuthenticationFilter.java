@@ -48,7 +48,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         }
 
         jwt = authHeader.substring(7);
-        System.out.println("🎫 JWT Filter - Extracted JWT (first 50 chars): " + jwt.substring(0, Math.min(50, jwt.length())) + "...");
         
         try {
             userEmail = jwtService.extractUsername(jwt);

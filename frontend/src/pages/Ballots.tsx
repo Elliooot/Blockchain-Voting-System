@@ -7,7 +7,7 @@ import {
     Delete as DeleteIcon,
     HowToVote as VoteIcon
 } from '@mui/icons-material';
-import { fetchBallots, createBallot } from '../api/apiService';
+import { fetchBallots, deleteBallot } from '../api/apiService';
 import { useNavigate } from 'react-router-dom';
 
 interface ApiBallot {
@@ -42,9 +42,22 @@ interface BallotTask {
   }>;
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
+  onDeleted?: () => void;
 }
 
-const TaskCard = ({ title, description, options, status }: Omit<BallotTask, 'id' | 'startTime' | 'duration' | 'qualifiedVoterIds'>) => {
+const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<BallotTask, 'startTime' | 'duration' | 'qualifiedVoterIds'>) => {
+
+  const handleDelete = async () => {
+    try {
+      if (!window.confirm('Are you sure you want to delete this ballot?')) return;
+      await deleteBallot(id);
+      if (onDeleted) onDeleted();
+    } catch (error) {
+      console.error('Failed to delete ballot:', error);
+      alert('Failed to delete ballot. Please try again.');
+    }
+  }
+
   const renderActions = () => {
     const buttonStyle = "bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100";
     
@@ -55,7 +68,7 @@ const TaskCard = ({ title, description, options, status }: Omit<BallotTask, 'id'
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Edit"><EditIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Delete"><DeleteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button>
           </>
         );
       case 'Active':
@@ -184,6 +197,8 @@ function Ballots() {
                     description={task.description} 
                     options={task.options}
                     status={task.status}
+                    id={task.id}
+                    onDeleted={loadBallots}
                     />
                 ))
                 }

@@ -4,8 +4,6 @@ import Homepage from './Homepage'
 import Login from './Login'
 import Register from './Registration'
 import Dashboard from './Dashboard'
-import Dashboard2 from './Dashboard2'
-import TestPage from './TestPage'
 import Overview from './pages/Overview'
 import Vote from './pages/Vote'
 import Result from './pages/Result'
@@ -42,8 +40,6 @@ function App() {
                 <Route path='/dashboard/voters' element={<Voters />} />
               </Route>
             </Route>
-            <Route path='/dashboard2' element={<Dashboard2 />} />
-            <Route path='/testPage' element={<TestPage />} />
           </Routes>
         </AuthProvider>
       </div>

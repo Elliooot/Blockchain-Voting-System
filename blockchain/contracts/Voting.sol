@@ -63,7 +63,7 @@ contract Voting {
     }
 
     constructor(string memory _title, uint256 _startTime, uint256 _duration) {
-        nextBallotId = 0;
+        nextBallotId = 1;
 
         Ballot storage newBallot = ballots[nextBallotId];
 
@@ -75,12 +75,12 @@ contract Voting {
         newBallot.result = "";
         newBallot.admin = msg.sender;
         newBallot.proposalCount = 0;
-        newBallot.commitments[keccak256(abi.encodePacked("dummy"))] = true; // Initialize with a dummy commitment
+        // newBallot.commitments[keccak256(abi.encodePacked("dummy"))] = true; // Initialize with a dummy commitment
 
         emit BallotCreated(nextBallotId, _title);
     }
 
-    function createBallot(string memory _title, uint256 _startTime, uint256 _duration) public {
+    function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public {
         uint256 ballotId = nextBallotId++;
 
         Ballot storage newBallot = ballots[ballotId];
@@ -92,6 +92,14 @@ contract Voting {
         newBallot.result = "";
         newBallot.admin = msg.sender;
         newBallot.proposalCount = 0;
+
+        for(uint256 i = 0; i < _proposalNames.length; i++) {
+            addProposal(ballotId, _proposalNames[i]);
+        }
+
+        for(uint256 i = 0; i < _voters.length; i++) {
+            registerVoter(ballotId, _voters[i]);
+        }
 
         emit BallotCreated(ballotId, _title);
     }

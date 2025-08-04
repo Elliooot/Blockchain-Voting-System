@@ -3,12 +3,21 @@ package com.voting.spring_boot_project.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.time.Instant;
+import java.math.BigInteger;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import org.web3j.protocol.Web3j;
+import org.web3j.crypto.Credentials;
+import org.web3j.tx.gas.ContractGasProvider;
+import org.web3j.tx.gas.DefaultGasProvider;
+import org.web3j.tx.gas.StaticGasProvider;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import com.voting.spring_boot_project.contract.Voting;
 
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
@@ -29,6 +38,12 @@ import lombok.RequiredArgsConstructor;
 public class BallotService {
     private final BallotRepository ballotRepository;
     private final UserRepository userRepository; // get the current user entity
+
+    private final Web3j web3j;
+    private final Credentials credentials;
+
+    @Value("${blockchain.contract.address}")
+    private String contractAddress;
 
     // @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public List<BallotResponse> getAllBallots() {
@@ -104,12 +119,69 @@ public class BallotService {
                 .status(Status.Pending)
                 .build();
 
-        Ballot createdballot = ballotRepository.save(ballot);
-        return convertToBallotResponse(createdballot);
+        Ballot createdballotInDB = ballotRepository.save(ballot);
+
+        // Calling Smart Contract
+        try {
+            System.out.println("Interacting with smart contract...");
+            System.out.println("Contract address: " + contractAddress);
+            System.out.println("Web3j URL: " + web3j.web3ClientVersion().send().getWeb3ClientVersion());
+            
+            BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
+            BigInteger gasLimit = BigInteger.valueOf(300_000L);
+            ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
+
+            // Loading the deployed contract
+            Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
+
+            // Converting Date and Duration in Java into uint256(sec) in Solidity
+            long startTimeSeconds = request.getStartTime().toInstant().getEpochSecond();
+            long durationSeconds = request.getDuration().getSeconds();
+
+            List<String> proposalNames = request.getOptions().stream()
+                .map(Option::getName)
+                .collect(Collectors.toList());
+
+            List<String> voterAddresses = qualifiedVoters.stream()
+                .map(User::getWalletAddress)
+                .collect(Collectors.toList());
+
+            System.out.println("Calling createBallot with:");
+            System.out.println("- title: " + request.getTitle());
+            System.out.println("- startTimeSeconds: " + startTimeSeconds);
+            System.out.println("- durationSeconds: " + durationSeconds);
+            System.out.println("- gasLimit: " + gasLimit);
+            System.out.println("- gasPrice: " + gasPrice);
+
+            // Calling createBallot() method and send
+            TransactionReceipt receipt = contract.createBallot(
+                request.getTitle(), 
+                BigInteger.valueOf(startTimeSeconds), 
+                BigInteger.valueOf(durationSeconds),
+                proposalNames,
+                voterAddresses
+            ).send();
+            
+            System.out.println("Smart Contract transaction successful. Hash: " + receipt.getTransactionHash());
+            System.out.println("Gas used: " + receipt.getGasUsed());
+
+            ballotRepository.save(createdballotInDB);
+        } catch (Exception e) {
+            System.out.println("Failed interacting with smart contract: " + e.getMessage());
+            System.out.println("Exception type: " + e.getClass().getSimpleName());
+            e.printStackTrace();
+            ballotRepository.delete(createdballotInDB);
+            throw new RuntimeException("Failed to create ballot on the blockchain: " + e.getMessage(), e);
+        }
+
+        return convertToBallotResponse(createdballotInDB);
     }
 
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     public void deleteBallot(Integer ballotId){
+        System.out.println("🚀 deleteBallot() method started");
+
+        System.out.println("Deleting ballot with id: " + ballotId);
         if(!ballotRepository.existsById(ballotId)){
             throw new RuntimeException("Ballot not found with id: " + ballotId);
         }

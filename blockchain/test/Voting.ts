@@ -14,6 +14,14 @@ describe("Voting Contract", function() {
         return { voting, admin, voter1, voter2, voter3 };
     }
 
+    // Helper function to create commitment hash
+    function createCommitment(proposalId: number, salt: string): string {
+        return ethers.solidityPackedKeccak256(
+            ["uint256", "bytes32"],
+            [proposalId, ethers.id(salt)]
+        );
+    }
+
     it("1: Should create an ballot in constructor", async function () {
         const { voting } = await loadFixture(deployVotingFixture);
         const ballot = await voting.ballots(1);
@@ -58,8 +66,23 @@ describe("Voting Contract", function() {
         await ethers.provider.send("evm_increaseTime", [300]); // Skip 5 mins
         await ethers.provider.send("evm_mine", []); // Mining new block
         
-        await (voting.connect(voter1) as any).vote(1, 1);
-        await (voting.connect(voter2) as any).vote(1, 1);
+        // Create commitments
+        const voter1Salt = ethers.id("voter1_secret");
+        const voter2Salt = ethers.id("voter2_secret");
+        const commitment1 = createCommitment(1, "voter1_secret");
+        const commitment2 = createCommitment(1, "voter2_secret");
+        
+        await (voting.connect(voter1) as any).commitVote(1, commitment1);
+        await (voting.connect(voter2) as any).commitVote(1, commitment2);
+
+        // Skip to reveal phase
+        await ethers.provider.send("evm_increaseTime", [86400]); // Skip 1 day
+        await ethers.provider.send("evm_mine", []);
+
+        // Reveal votes
+        await (voting.connect(voter1) as any).revealVote(1, 1, voter1Salt);
+        await (voting.connect(voter2) as any).revealVote(1, 1, voter2Salt);
+
         const proposalB = await voting.getProposal(1, 1);
         expect(proposalB.voteCount).to.equal(2);
     });
@@ -69,10 +92,11 @@ describe("Voting Contract", function() {
         await (voting.connect(admin) as any).addProposal(1, "Proposal A");
         await (voting.connect(admin) as any).registerVoter(1, voter1.address);
         
-        await ethers.provider.send("evm_increaseTime", [86400 + 3600]); // Skip 1 day
+        await ethers.provider.send("evm_increaseTime", [86400 + 3600]); // Skip 1 + 1 hour
         await ethers.provider.send("evm_mine", []); // Mining new block
         
-        await expect((voting.connect(voter1) as any).vote(1, 0)).to.be.revertedWith("Voting is not active");
+        const commitment = createCommitment(0, "secret");
+        await expect((voting.connect(voter1) as any).commitVote(1, commitment)).to.be.revertedWith("Voting is not active");
     });
 
     it("6: Should get the vote count correctly", async function () {
@@ -87,12 +111,23 @@ describe("Voting Contract", function() {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await ethers.provider.send("evm_mine", []);
 
-        await (voting.connect(voter1) as any).vote(1, 1);
-        await (voting.connect(voter2) as any).vote(1, 0);
-        await (voting.connect(voter3) as any).vote(1, 1);
+        const voter1Salt = ethers.id("voter1_secret");
+        const voter2Salt = ethers.id("voter2_secret");
+        const voter3Salt = ethers.id("voter3_secret");
+        const commitment1 = createCommitment(1, "voter1_secret");
+        const commitment2 = createCommitment(0, "voter2_secret");
+        const commitment3 = createCommitment(1, "voter3_secret");
+
+        await (voting.connect(voter1) as any).commitVote(1, commitment1);
+        await (voting.connect(voter2) as any).commitVote(1, commitment2);
+        await (voting.connect(voter3) as any).commitVote(1, commitment3);
         
         await ethers.provider.send("evm_increaseTime", [86400]);
         await ethers.provider.send("evm_mine", []);
+
+        await (voting.connect(voter1) as any).revealVote(1, 1, voter1Salt);
+        await (voting.connect(voter2) as any).revealVote(1, 0, voter2Salt);
+        await (voting.connect(voter3) as any).revealVote(1, 1, voter3Salt);
 
         const proposalsCount = await voting.getVoteCounts(1);
         expect(proposalsCount[0]).to.equal(1);
@@ -111,16 +146,27 @@ describe("Voting Contract", function() {
         await ethers.provider.send("evm_increaseTime", [3600]);
         await ethers.provider.send("evm_mine", []);
 
-        await (voting.connect(voter1) as any).vote(1, 0);
-        await (voting.connect(voter2) as any).vote(1, 1);
-        await (voting.connect(voter3) as any).vote(1, 1);
+        const voter1Salt = ethers.id("voter1_secret");
+        const voter2Salt = ethers.id("voter2_secret");
+        const voter3Salt = ethers.id("voter3_secret");
+        const commitment1 = createCommitment(1, "voter1_secret");
+        const commitment2 = createCommitment(1, "voter2_secret");
+        const commitment3 = createCommitment(1, "voter3_secret");
+
+        await (voting.connect(voter1) as any).commitVote(1, commitment1);
+        await (voting.connect(voter2) as any).commitVote(1, commitment2);
+        await (voting.connect(voter3) as any).commitVote(1, commitment3);
         
         await ethers.provider.send("evm_increaseTime", [86400]);
         await ethers.provider.send("evm_mine", []);
 
+        await (voting.connect(voter1) as any).revealVote(1, 1, voter1Salt);
+        await (voting.connect(voter2) as any).revealVote(1, 1, voter2Salt);
+        await (voting.connect(voter3) as any).revealVote(1, 1, voter3Salt);
+
         await (voting.connect(admin) as any).finalizeResult(1);
         const result = await voting.getResult(1);
-        expect(result).to.be.equal("Proposal B");
+        expect(result).to.be.equal("Proposal(s) with the most votes: Proposal B");
     })
 
     it("8: Should terminate voting", async function () {

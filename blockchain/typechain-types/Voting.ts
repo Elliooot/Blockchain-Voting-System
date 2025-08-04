@@ -93,7 +93,7 @@ export interface VotingInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "createBallot",
-    values: [string, BigNumberish, BigNumberish]
+    values: [string, BigNumberish, BigNumberish, string[], AddressLike[]]
   ): string;
   encodeFunctionData(
     functionFragment: "finalizeResult",
@@ -287,7 +287,13 @@ export interface Voting extends BaseContract {
   >;
 
   createBallot: TypedContractMethod<
-    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
+    [
+      _title: string,
+      _startTime: BigNumberish,
+      _duration: BigNumberish,
+      _proposalNames: string[],
+      _voters: AddressLike[]
+    ],
     [void],
     "nonpayable"
   >;
@@ -383,7 +389,13 @@ export interface Voting extends BaseContract {
   getFunction(
     nameOrSignature: "createBallot"
   ): TypedContractMethod<
-    [_title: string, _startTime: BigNumberish, _duration: BigNumberish],
+    [
+      _title: string,
+      _startTime: BigNumberish,
+      _duration: BigNumberish,
+      _proposalNames: string[],
+      _voters: AddressLike[]
+    ],
     [void],
     "nonpayable"
   >;
