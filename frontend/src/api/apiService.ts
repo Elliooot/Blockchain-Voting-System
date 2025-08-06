@@ -66,6 +66,17 @@ export const fetchBallots = async () => {
     }
 };
 
+export const fetchBallotById = async (ballotId: number) => {
+    try {
+        const response = await apiClient.get(`/ballots/${ballotId}`);
+        console.log("Fetched ballot: " + ballotId);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching ballot: " + error);
+        throw error;
+    }
+};
+
 export const deleteBallot = async (ballotId: number) => {
     try {
         const response = await apiClient.delete('ballots/delete/' + ballotId);
@@ -88,9 +99,32 @@ export const searchVoterByEmail = async (email: string) => {
     }
 }
 
+export const castVote = async (voteData: object) => {
+    try {
+        const response = await apiClient.post('/voting/vote', voteData);
+        console.log("Cast vote response:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to cast vote in apiService:", error);
+        throw error;
+    }
+};
+
+
+export const loadUserWallet = async () => {
+    try {
+        const response = await apiClient.get('/user/get_wallet');
+        console.log("Loaded wallet address:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error loading wallet address: " + error);
+        throw error;
+    }
+};
+
 export const updateWalletAddress = async (walletAddress: string) => {
     try {
-        const response = await apiClient.post('/user/update_wallet', { walletAddress });
+        const response = await apiClient.put('/user/update_wallet', { walletAddress });
         console.log("Updated wallet address:", response.data);
         return response.data;
     } catch (error) {

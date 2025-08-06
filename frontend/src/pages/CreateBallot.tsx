@@ -25,7 +25,7 @@ interface BallotFormData {
 function CreateBallot() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // 2. 新增 voterEmail state 來控制輸入框
+  // Use voterEmail state to control input box
   const [voterEmail, setVoterEmail] = useState(''); 
   const [isAddingVoter, setIsAddingVoter] = useState(false);
 
@@ -113,7 +113,7 @@ function CreateBallot() {
 
     const payload = {
       ...formData,
-      duration: `PT${formData.duration}H`,
+      duration: `PT${formData.duration}H`,  // Formatting duration
       qualifiedVoterIds: qualifiedVoterIds, // Add Id list to payload
     };
 

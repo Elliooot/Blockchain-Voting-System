@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class OptionResponse {
     // This is created to exclude ballot, to avoid infinite loop reference
     private Integer id;
+    private Long blockchainOptionId;
     private String name;
     private String description;
     private int voteCount;

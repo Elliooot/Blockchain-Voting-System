@@ -61,7 +61,6 @@ export interface VotingInterface extends Interface {
     nameOrSignature:
       | "addProposal"
       | "ballots"
-      | "commitVote"
       | "createBallot"
       | "finalizeResult"
       | "getCommitment"
@@ -71,12 +70,16 @@ export interface VotingInterface extends Interface {
       | "getVoter"
       | "nextBallotId"
       | "registerVoter"
-      | "revealVote"
       | "terminateVoting"
+      | "vote"
   ): FunctionFragment;
 
   getEvent(
-    nameOrSignatureOrTopic: "BallotCreated" | "VoteRecorded"
+    nameOrSignatureOrTopic:
+      | "BallotCreated"
+      | "BallotResultFinalized"
+      | "ProposalCreated"
+      | "VoteRecorded"
   ): EventFragment;
 
   encodeFunctionData(
@@ -86,10 +89,6 @@ export interface VotingInterface extends Interface {
   encodeFunctionData(
     functionFragment: "ballots",
     values: [BigNumberish]
-  ): string;
-  encodeFunctionData(
-    functionFragment: "commitVote",
-    values: [BigNumberish, BytesLike]
   ): string;
   encodeFunctionData(
     functionFragment: "createBallot",
@@ -128,12 +127,12 @@ export interface VotingInterface extends Interface {
     values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
-    functionFragment: "revealVote",
-    values: [BigNumberish, BigNumberish, BytesLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "terminateVoting",
     values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "vote",
+    values: [BigNumberish, BigNumberish]
   ): string;
 
   decodeFunctionResult(
@@ -141,7 +140,6 @@ export interface VotingInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "ballots", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "commitVote", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "createBallot",
     data: BytesLike
@@ -172,11 +170,11 @@ export interface VotingInterface extends Interface {
     functionFragment: "registerVoter",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "revealVote", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "terminateVoting",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "vote", data: BytesLike): Result;
 }
 
 export namespace BallotCreatedEvent {
@@ -192,21 +190,56 @@ export namespace BallotCreatedEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace BallotResultFinalizedEvent {
+  export type InputTuple = [ballotId: BigNumberish, result: string];
+  export type OutputTuple = [ballotId: bigint, result: string];
+  export interface OutputObject {
+    ballotId: bigint;
+    result: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ProposalCreatedEvent {
+  export type InputTuple = [
+    ballotId: BigNumberish,
+    proposalId: BigNumberish,
+    name: string
+  ];
+  export type OutputTuple = [
+    ballotId: bigint,
+    proposalId: bigint,
+    name: string
+  ];
+  export interface OutputObject {
+    ballotId: bigint;
+    proposalId: bigint;
+    name: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace VoteRecordedEvent {
   export type InputTuple = [
     voter: AddressLike,
     ballotId: BigNumberish,
-    commitment: BytesLike
+    proposalId: BigNumberish
   ];
   export type OutputTuple = [
     voter: string,
     ballotId: bigint,
-    commitment: string
+    proposalId: bigint
   ];
   export interface OutputObject {
     voter: string;
     ballotId: bigint;
-    commitment: string;
+    proposalId: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -280,12 +313,6 @@ export interface Voting extends BaseContract {
     "view"
   >;
 
-  commitVote: TypedContractMethod<
-    [_ballotId: BigNumberish, _commitment: BytesLike],
-    [void],
-    "nonpayable"
-  >;
-
   createBallot: TypedContractMethod<
     [
       _title: string,
@@ -338,14 +365,14 @@ export interface Voting extends BaseContract {
     "nonpayable"
   >;
 
-  revealVote: TypedContractMethod<
-    [_ballotId: BigNumberish, _proposalId: BigNumberish, _salt: BytesLike],
+  terminateVoting: TypedContractMethod<
+    [_ballotId: BigNumberish],
     [void],
     "nonpayable"
   >;
 
-  terminateVoting: TypedContractMethod<
-    [_ballotId: BigNumberish],
+  vote: TypedContractMethod<
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -378,13 +405,6 @@ export interface Voting extends BaseContract {
       }
     ],
     "view"
-  >;
-  getFunction(
-    nameOrSignature: "commitVote"
-  ): TypedContractMethod<
-    [_ballotId: BigNumberish, _commitment: BytesLike],
-    [void],
-    "nonpayable"
   >;
   getFunction(
     nameOrSignature: "createBallot"
@@ -440,15 +460,15 @@ export interface Voting extends BaseContract {
     "nonpayable"
   >;
   getFunction(
-    nameOrSignature: "revealVote"
+    nameOrSignature: "terminateVoting"
+  ): TypedContractMethod<[_ballotId: BigNumberish], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "vote"
   ): TypedContractMethod<
-    [_ballotId: BigNumberish, _proposalId: BigNumberish, _salt: BytesLike],
+    [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
   >;
-  getFunction(
-    nameOrSignature: "terminateVoting"
-  ): TypedContractMethod<[_ballotId: BigNumberish], [void], "nonpayable">;
 
   getEvent(
     key: "BallotCreated"
@@ -456,6 +476,20 @@ export interface Voting extends BaseContract {
     BallotCreatedEvent.InputTuple,
     BallotCreatedEvent.OutputTuple,
     BallotCreatedEvent.OutputObject
+  >;
+  getEvent(
+    key: "BallotResultFinalized"
+  ): TypedContractEvent<
+    BallotResultFinalizedEvent.InputTuple,
+    BallotResultFinalizedEvent.OutputTuple,
+    BallotResultFinalizedEvent.OutputObject
+  >;
+  getEvent(
+    key: "ProposalCreated"
+  ): TypedContractEvent<
+    ProposalCreatedEvent.InputTuple,
+    ProposalCreatedEvent.OutputTuple,
+    ProposalCreatedEvent.OutputObject
   >;
   getEvent(
     key: "VoteRecorded"
@@ -477,7 +511,29 @@ export interface Voting extends BaseContract {
       BallotCreatedEvent.OutputObject
     >;
 
-    "VoteRecorded(address,uint256,bytes32)": TypedContractEvent<
+    "BallotResultFinalized(uint256,string)": TypedContractEvent<
+      BallotResultFinalizedEvent.InputTuple,
+      BallotResultFinalizedEvent.OutputTuple,
+      BallotResultFinalizedEvent.OutputObject
+    >;
+    BallotResultFinalized: TypedContractEvent<
+      BallotResultFinalizedEvent.InputTuple,
+      BallotResultFinalizedEvent.OutputTuple,
+      BallotResultFinalizedEvent.OutputObject
+    >;
+
+    "ProposalCreated(uint256,uint256,string)": TypedContractEvent<
+      ProposalCreatedEvent.InputTuple,
+      ProposalCreatedEvent.OutputTuple,
+      ProposalCreatedEvent.OutputObject
+    >;
+    ProposalCreated: TypedContractEvent<
+      ProposalCreatedEvent.InputTuple,
+      ProposalCreatedEvent.OutputTuple,
+      ProposalCreatedEvent.OutputObject
+    >;
+
+    "VoteRecorded(address,uint256,uint256)": TypedContractEvent<
       VoteRecordedEvent.InputTuple,
       VoteRecordedEvent.OutputTuple,
       VoteRecordedEvent.OutputObject

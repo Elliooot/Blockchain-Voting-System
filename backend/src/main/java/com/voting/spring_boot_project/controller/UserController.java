@@ -26,6 +26,7 @@ import com.voting.spring_boot_project.repository.UserRepository;
 import com.voting.spring_boot_project.service.UserService;
 
 import lombok.RequiredArgsConstructor;
+import okhttp3.Response;
 
 @RestController
 @RequestMapping("/api/user")
@@ -42,7 +43,8 @@ public class UserController {
     public ResponseEntity<GetUserResponse> getUser(
         @RequestParam("email") String email
     ) {
-        User user = userService.getUserByEmail(email);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         GetUserResponse response = GetUserResponse.builder()
                 .id(user.getId())
@@ -55,7 +57,7 @@ public class UserController {
     @GetMapping("get_all_ids")
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     public ResponseEntity<GetUserResponse> getAllUser() {
-        List<User> users = userService.getAllUsers();
+        List<User> users = userRepository.findAll();
 
         List<Integer> userIds = users.stream()
                                     .map(User::getId)
@@ -73,30 +75,16 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/get_wallet")
+    public ResponseEntity<Map<String, String>> getWalletAddress() {
+        return ResponseEntity.ok(userService.getWalletAddress());
+    }
+    
     @PutMapping("/update_wallet")
     public ResponseEntity<Map<String, String>> updateWalletAddress(
         @RequestBody UpdateWalletRequest request
     ){
-        System.out.println("Updating wallet address: " + request.getWalletAddress());
-
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String userEmail = auth.getName();
-
-            // TODO: Check if wallet address is used by others
-            User user = userService.getUserByEmail(userEmail);
-            user.setWalletAddress(request.getWalletAddress());
-            userRepository.save(user);
-
-            Map<String, String> response = new HashMap<>();
-            response.put("message", "Wallet address updated successfully");
-            response.put("walletAddress", request.getWalletAddress());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.out.println("Failed to update wallet address: " + e.getMessage());
-            throw new RuntimeException("Failed to update wallet address: " + e.getMessage(), e);
-        }
+        return ResponseEntity.ok(userService.updateWalletAddress(request));
     }
 
     @DeleteMapping("/delete")

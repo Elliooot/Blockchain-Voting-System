@@ -13,6 +13,7 @@ interface User {
     dateOfBirth: number;
     gender: string;
     userId: string;
+    walletAddress: string;
 }
 
 interface AuthContextType {

@@ -15,6 +15,7 @@ import Voters from './pages/Voters'
 import ProtectRoute from './utils/ProtectedRoute'
 import { AuthProvider } from './contexts/AuthContext'
 import CreateBallot from './pages/CreateBallot'
+import VoteInBallot from './pages/VoteInBallot'
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
                 <Route path='/dashboard/setting' element={<Setting />} />
                 <Route path='/dashboard/ballots' element={<Ballots />} />
                 <Route path='/dashboard/ballots/create' element={<CreateBallot />} />
+                <Route path="/dashboard/ballots/vote/:ballotId" element={<VoteInBallot />} />
                 <Route path='/dashboard/voters' element={<Voters />} />
               </Route>
             </Route>

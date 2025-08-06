@@ -31,8 +31,10 @@ contract Voting {
     mapping(uint256 => Ballot) public ballots;
     uint256 public nextBallotId;
 
-    event BallotCreated(uint256 ballotId, string title);
-    event VoteRecorded(address indexed voter, uint256 ballotId, bytes32 commitment);
+    event BallotCreated(uint256 ballotId, string title); // For Spring Boot to get the ballot ID
+    event ProposalCreated(uint256 ballotId, uint256 proposalId, string name); // For Spring Boot to get the proposal ID
+    event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalId); // For Spring Boot to get the vote details
+    event BallotResultFinalized(uint256 ballotId, string result); // For Spring Boot to get the final result
 
     modifier onlyAdmin(uint256 _ballotId) {
         require(msg.sender == ballots[_ballotId].admin, "Only admin can perform this action");
@@ -62,25 +64,14 @@ contract Voting {
         _;
     }
 
-    constructor(string memory _title, uint256 _startTime, uint256 _duration) {
-        nextBallotId = 1;
-
-        Ballot storage newBallot = ballots[nextBallotId];
-
-        newBallot.ballotId = nextBallotId;
-        newBallot.title = _title;
-        newBallot.startTime = _startTime;
-        newBallot.duration = _duration;
-        newBallot.terminated = false;
-        newBallot.result = "";
-        newBallot.admin = msg.sender;
-        newBallot.proposalCount = 0;
-        // newBallot.commitments[keccak256(abi.encodePacked("dummy"))] = true; // Initialize with a dummy commitment
-
-        emit BallotCreated(nextBallotId, _title);
+    constructor() {
     }
 
     function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public {
+        require(_startTime > block.timestamp, "Start time must be in the future");
+        require(_proposalNames.length > 1, "Must have at least two proposals");
+        require(_voters.length > 0, "Must have at least one voter");
+
         uint256 ballotId = nextBallotId++;
 
         Ballot storage newBallot = ballots[ballotId];
@@ -91,14 +82,22 @@ contract Voting {
         newBallot.terminated = false;
         newBallot.result = "";
         newBallot.admin = msg.sender;
-        newBallot.proposalCount = 0;
+        newBallot.proposalCount = _proposalNames.length;
 
         for(uint256 i = 0; i < _proposalNames.length; i++) {
-            addProposal(ballotId, _proposalNames[i]);
+            newBallot.proposals[i] = Proposal({
+                index: i,
+                name: _proposalNames[i],
+                voteCount: 0
+            });
+            emit ProposalCreated(ballotId, i, _proposalNames[i]);
         }
 
         for(uint256 i = 0; i < _voters.length; i++) {
-            registerVoter(ballotId, _voters[i]);
+            address voterAddress = _voters[i];
+            require(voterAddress != address(0), "Invalid voter address");
+            require(!newBallot.voters[voterAddress].isRegistered, "Voter is already registered");
+            newBallot.voters[voterAddress].isRegistered = true;
         }
 
         emit BallotCreated(ballotId, _title);
@@ -116,42 +115,43 @@ contract Voting {
         });
         
         ballot.proposalCount++;
+        emit ProposalCreated(_ballotId, newProposalId, _name);
     }
 
-    // function vote(uint256 _ballotId, uint256 _proposalId) public onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
-    //     require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
-    //     require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
-
-    //     ballots[_ballotId].voters[msg.sender].hasVoted = true;
-    //     ballots[_ballotId].voters[msg.sender].vote = _proposalId;
-    //     ballots[_ballotId].proposals[_proposalId].voteCount += 1;
-
-    //     emit VoteRecorded(msg.sender, _ballotId, _proposalId);
-    // }
-
-    function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){ // Commit a vote using a hash to achieve anonymous voting
+    function vote(uint256 _ballotId, uint256 _proposalId) public onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
         require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
         require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
-        require(!ballots[_ballotId].commitments[_commitment], "Commitment already exists");
-
 
         ballots[_ballotId].voters[msg.sender].hasVoted = true;
-        ballots[_ballotId].voters[msg.sender].voteHash = _commitment;
-        ballots[_ballotId].commitments[_commitment] = true;
-
-        emit VoteRecorded(msg.sender, _ballotId, _commitment);
-    }
-
-    function revealVote(uint256 _ballotId, uint256 _proposalId, bytes32 _salt) public onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) {
-        require(ballots[_ballotId].voters[msg.sender].hasVoted, "You have not committed a vote yet");
-        require(ballots[_ballotId].voters[msg.sender].voteHash == keccak256(abi.encodePacked(_proposalId, _salt)), "Invalid vote reveal");
-        bytes32 commitment = keccak256(abi.encodePacked(_proposalId, _salt));
-        require(ballots[_ballotId].commitments[commitment], "Invalid commitment");
-
         ballots[_ballotId].voters[msg.sender].vote = _proposalId;
         ballots[_ballotId].proposals[_proposalId].voteCount += 1;
-        ballots[_ballotId].commitments[commitment] = false; // Remove commitment after revealing
+
+        emit VoteRecorded(msg.sender, _ballotId, _proposalId);
     }
+
+    // function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){ // Commit a vote using a hash to achieve anonymous voting
+    //     require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
+    //     require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
+    //     require(!ballots[_ballotId].commitments[_commitment], "Commitment already exists");
+
+
+    //     ballots[_ballotId].voters[msg.sender].hasVoted = true;
+    //     ballots[_ballotId].voters[msg.sender].voteHash = _commitment;
+    //     ballots[_ballotId].commitments[_commitment] = true;
+
+    //     emit VoteRecorded(msg.sender, _ballotId, _commitment);
+    // }
+
+    // function revealVote(uint256 _ballotId, uint256 _proposalId, bytes32 _salt) public onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) {
+    //     require(ballots[_ballotId].voters[msg.sender].hasVoted, "You have not committed a vote yet");
+    //     require(ballots[_ballotId].voters[msg.sender].voteHash == keccak256(abi.encodePacked(_proposalId, _salt)), "Invalid vote reveal");
+    //     bytes32 commitment = keccak256(abi.encodePacked(_proposalId, _salt));
+    //     require(ballots[_ballotId].commitments[commitment], "Invalid commitment");
+
+    //     ballots[_ballotId].voters[msg.sender].vote = _proposalId;
+    //     ballots[_ballotId].proposals[_proposalId].voteCount += 1;
+    //     ballots[_ballotId].commitments[commitment] = false; // Remove commitment after revealing
+    // }
 
     function getVoteCounts(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (uint256[] memory) {
         uint256 proposalCount = ballots[_ballotId].proposalCount;
@@ -181,7 +181,7 @@ contract Voting {
             }
         }
 
-        result = "Proposal(s) with the most votes: ";
+        result = "";
         for (uint256 i = 0; i < tieCount; i++) {
             if (i > 0) {
                 result = string(abi.encodePacked(result, ", "));
@@ -190,6 +190,7 @@ contract Voting {
         }
 
         ballots[_ballotId].result = result;
+        emit BallotResultFinalized(_ballotId, result);
     } 
 
     function getResult(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (string memory) {

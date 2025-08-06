@@ -25,6 +25,8 @@ public class Option {
     @Column(name = "option_id")
     private Integer id;
 
+    private Long blockchainOptionId;
+
     @ManyToOne
     @JoinColumn(name = "ballot_id")
     private Ballot ballot;

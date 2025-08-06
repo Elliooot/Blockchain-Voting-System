@@ -9,6 +9,7 @@ import {
 } from '@mui/icons-material';
 import { fetchBallots, deleteBallot } from '../api/apiService';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ApiBallot {
   id: number;
@@ -45,7 +46,19 @@ interface BallotTask {
   onDeleted?: () => void;
 }
 
-const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<BallotTask, 'startTime' | 'duration' | 'qualifiedVoterIds'>) => {
+const TaskCard = ({ 
+  id, 
+  title, 
+  description, 
+  options, 
+  status, 
+  onDeleted, 
+  userRole
+  }: Omit<BallotTask, 'startTime' | 'duration' | 'qualifiedVoterIds'> & {
+    userRole: string;
+  }) => {
+
+  const navigate = useNavigate();
 
   const handleDelete = async () => {
     try {
@@ -58,7 +71,16 @@ const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<B
     }
   }
 
+  const handleEdit = () => {
+    navigate('/dashboard/ballots/edit');
+  }
+
+  const handleVote = () => {
+    navigate(`/dashboard/ballots/vote/${id}`);
+  }
+
   const renderActions = () => {
+    const isAdmin = userRole.includes('Admin');
     const buttonStyle = "bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100";
     
     switch(status){
@@ -67,8 +89,8 @@ const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<B
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Edit"><EditIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button>
+            {isAdmin && ( <button className={buttonStyle} title="Edit"><EditIcon fontSize="small" /></button> )}
+            {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
         );
       case 'Active':
@@ -76,10 +98,12 @@ const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<B
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle + " flex-1 justify-center"} title="Vote">
+            {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
+            {!isAdmin && ( <button className={buttonStyle + " flex-1 justify-center"} title="Vote" onClick={handleVote}>
               <VoteIcon fontSize="small" />
               Vote
             </button>
+            )}
           </>
         );
       case 'Ended':
@@ -87,7 +111,7 @@ const TaskCard = ({ id, title, description, options, status, onDeleted }: Omit<B
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Delete"><DeleteIcon fontSize="small" /></button>
+            {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
         );
       default:
@@ -123,6 +147,8 @@ function Ballots() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  const { user } = useAuth();
 
   const loadBallots = useCallback(async () => {
     try {
@@ -164,13 +190,15 @@ function Ballots() {
     <div className="p-5 min-h-screen">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Manage Ballots</h1>
-        <button
-          onClick={handleCreateBallot}
-          className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors"
-        >
-          <AddIcon />
-          Create Ballot
-        </button>
+        {user?.role.includes('Admin') && (
+          <button
+            onClick={handleCreateBallot}
+            className="flex items-center gap-2 bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors"
+          >
+            <AddIcon />
+            Create Ballot
+          </button>
+        )}
       </div>
 
       {isLoading && <div className="p-5 text-center text-gray-500">Loading elections...</div>}
@@ -192,13 +220,14 @@ function Ballots() {
                 .filter(task => task.status === columnStatus)
                 .map(task => (
                     <TaskCard 
-                    key={task.id} 
-                    title={task.title} 
-                    description={task.description} 
-                    options={task.options}
-                    status={task.status}
-                    id={task.id}
-                    onDeleted={loadBallots}
+                      key={task.id}
+                      title={task.title}
+                      description={task.description}
+                      options={task.options}
+                      status={task.status}
+                      id={task.id}
+                      onDeleted={loadBallots} 
+                      userRole={user?.role || ''}                    
                     />
                 ))
                 }

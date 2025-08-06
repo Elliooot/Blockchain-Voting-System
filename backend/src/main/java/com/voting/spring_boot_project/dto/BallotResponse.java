@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BallotResponse {
     private Integer id;
+    private Long blockchainBallotId;
     private String title;
     private String description;
     private Date startTime;

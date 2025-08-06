@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VoteRequest {
+    private Integer blockchainBallotId;
     private Integer optionId;
 }

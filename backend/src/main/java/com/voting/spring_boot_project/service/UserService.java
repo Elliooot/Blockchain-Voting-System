@@ -1,10 +1,13 @@
 package com.voting.spring_boot_project.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.voting.spring_boot_project.dto.UpdateWalletRequest;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
@@ -18,13 +21,47 @@ public class UserService {
     private final UserRepository userRepository;
     private final BallotRepository ballotRepository;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public Map<String, String> getWalletAddress(){
+        System.out.println("Get Wallet Address Method Called");
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        String walletAddress = user.getWalletAddress();
+        Map<String, String> response = new HashMap<>();
+        response.put("walletAddress", walletAddress);
+        return response;
     }
 
-    public User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found: " + email));
+    public Map<String, String> updateWalletAddress(UpdateWalletRequest request){
+        System.out.println("Update Wallet Address Method Called");
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        System.out.println("User's current wallet address: " + user.getWalletAddress());
+
+        System.out.println("Updating wallet address...");
+        
+        if(request.getWalletAddress() == null || request.getWalletAddress().isEmpty()){
+            System.out.println("Disconnect Wallet Address");
+            user.setWalletAddress(null);
+        } else {
+            System.out.println("Update Wallet Address");
+            System.out.println("New wallet address: " + request.getWalletAddress());
+            user.setWalletAddress(request.getWalletAddress());
+        }
+
+        userRepository.save(user);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Wallet address updated successfully");
+        response.put("walletAddress", request.getWalletAddress());
+
+        return response;
     }
 
     public void deleteAccount(String userEmail) {

@@ -37,10 +37,10 @@ public class BallotController {
         return ballotService.getBallotsForCurrentUser();
     }
 
-    @GetMapping("/all")
-    public ResponseEntity<List<BallotResponse>> getAllBallots() {
-        List<BallotResponse> ballots = ballotService.getAllBallots();
-        return ResponseEntity.ok(ballots);
+    @GetMapping("/{id}")
+    public ResponseEntity<BallotResponse> getBallotById(@PathVariable Integer id) {
+        System.out.println("🎯 BallotController - getBallotById() called");
+        return ResponseEntity.ok(ballotService.getBallotById(id));
     }
 
     @PostMapping("/create")

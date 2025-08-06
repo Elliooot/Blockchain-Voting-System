@@ -69,7 +69,7 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open'}
 
 const navigationItemsVoter = [
     { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard/overview' },
-    { text: 'Vote', icon: <HowToVoteIcon />, path: '/dashboard/vote' },
+    { text: 'Vote', icon: <HowToVoteIcon />, path: '/dashboard/ballots' },
     { text: 'Result', icon: <AnalyticsIcon />, path: '/dashboard/result' },
     { text: 'Wallet', icon: <WalletIcon />, path: '/dashboard/wallet' },
     { text: 'Profile', icon: <AccountBoxIcon />, path: '/dashboard/profile' },
