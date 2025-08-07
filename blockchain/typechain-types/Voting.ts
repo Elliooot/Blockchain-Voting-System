@@ -40,20 +40,13 @@ export declare namespace Voting {
     isRegistered: boolean;
     hasVoted: boolean;
     vote: BigNumberish;
-    voteHash: BytesLike;
   };
 
   export type VoterStructOutput = [
     isRegistered: boolean,
     hasVoted: boolean,
-    vote: bigint,
-    voteHash: string
-  ] & {
-    isRegistered: boolean;
-    hasVoted: boolean;
-    vote: bigint;
-    voteHash: string;
-  };
+    vote: bigint
+  ] & { isRegistered: boolean; hasVoted: boolean; vote: bigint };
 }
 
 export interface VotingInterface extends Interface {
@@ -63,15 +56,16 @@ export interface VotingInterface extends Interface {
       | "ballots"
       | "createBallot"
       | "finalizeResult"
-      | "getCommitment"
       | "getProposal"
       | "getResult"
       | "getVoteCounts"
       | "getVoter"
       | "nextBallotId"
+      | "proposalsByBallot"
       | "registerVoter"
       | "terminateVoting"
       | "vote"
+      | "votersByBallot"
   ): FunctionFragment;
 
   getEvent(
@@ -99,10 +93,6 @@ export interface VotingInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
-    functionFragment: "getCommitment",
-    values: [BigNumberish, BytesLike]
-  ): string;
-  encodeFunctionData(
     functionFragment: "getProposal",
     values: [BigNumberish, BigNumberish]
   ): string;
@@ -123,6 +113,10 @@ export interface VotingInterface extends Interface {
     values?: undefined
   ): string;
   encodeFunctionData(
+    functionFragment: "proposalsByBallot",
+    values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "registerVoter",
     values: [BigNumberish, AddressLike]
   ): string;
@@ -133,6 +127,10 @@ export interface VotingInterface extends Interface {
   encodeFunctionData(
     functionFragment: "vote",
     values: [BigNumberish, BigNumberish]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "votersByBallot",
+    values: [BigNumberish, AddressLike]
   ): string;
 
   decodeFunctionResult(
@@ -146,10 +144,6 @@ export interface VotingInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "finalizeResult",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "getCommitment",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -167,6 +161,10 @@ export interface VotingInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "proposalsByBallot",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "registerVoter",
     data: BytesLike
   ): Result;
@@ -175,6 +173,10 @@ export interface VotingInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "vote", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "votersByBallot",
+    data: BytesLike
+  ): Result;
 }
 
 export namespace BallotCreatedEvent {
@@ -331,12 +333,6 @@ export interface Voting extends BaseContract {
     "nonpayable"
   >;
 
-  getCommitment: TypedContractMethod<
-    [_ballotId: BigNumberish, _commitment: BytesLike],
-    [boolean],
-    "view"
-  >;
-
   getProposal: TypedContractMethod<
     [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [Voting.ProposalStructOutput],
@@ -359,6 +355,18 @@ export interface Voting extends BaseContract {
 
   nextBallotId: TypedContractMethod<[], [bigint], "view">;
 
+  proposalsByBallot: TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [
+      [bigint, string, bigint] & {
+        index: bigint;
+        name: string;
+        voteCount: bigint;
+      }
+    ],
+    "view"
+  >;
+
   registerVoter: TypedContractMethod<
     [_ballotId: BigNumberish, voter: AddressLike],
     [void],
@@ -375,6 +383,18 @@ export interface Voting extends BaseContract {
     [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
+  >;
+
+  votersByBallot: TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [
+      [boolean, boolean, bigint] & {
+        isRegistered: boolean;
+        hasVoted: boolean;
+        vote: bigint;
+      }
+    ],
+    "view"
   >;
 
   getFunction<T extends ContractMethod = ContractMethod>(
@@ -423,13 +443,6 @@ export interface Voting extends BaseContract {
     nameOrSignature: "finalizeResult"
   ): TypedContractMethod<[_ballotId: BigNumberish], [void], "nonpayable">;
   getFunction(
-    nameOrSignature: "getCommitment"
-  ): TypedContractMethod<
-    [_ballotId: BigNumberish, _commitment: BytesLike],
-    [boolean],
-    "view"
-  >;
-  getFunction(
     nameOrSignature: "getProposal"
   ): TypedContractMethod<
     [_ballotId: BigNumberish, _proposalId: BigNumberish],
@@ -453,6 +466,19 @@ export interface Voting extends BaseContract {
     nameOrSignature: "nextBallotId"
   ): TypedContractMethod<[], [bigint], "view">;
   getFunction(
+    nameOrSignature: "proposalsByBallot"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: BigNumberish],
+    [
+      [bigint, string, bigint] & {
+        index: bigint;
+        name: string;
+        voteCount: bigint;
+      }
+    ],
+    "view"
+  >;
+  getFunction(
     nameOrSignature: "registerVoter"
   ): TypedContractMethod<
     [_ballotId: BigNumberish, voter: AddressLike],
@@ -468,6 +494,19 @@ export interface Voting extends BaseContract {
     [_ballotId: BigNumberish, _proposalId: BigNumberish],
     [void],
     "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "votersByBallot"
+  ): TypedContractMethod<
+    [arg0: BigNumberish, arg1: AddressLike],
+    [
+      [boolean, boolean, bigint] & {
+        isRegistered: boolean;
+        hasVoted: boolean;
+        vote: bigint;
+      }
+    ],
+    "view"
   >;
 
   getEvent(

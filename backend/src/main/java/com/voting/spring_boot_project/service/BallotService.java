@@ -16,7 +16,10 @@ import org.web3j.crypto.Credentials;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.DefaultGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.protocol.exceptions.TransactionException;
+
 import com.voting.spring_boot_project.contract.Voting;
 
 import com.voting.spring_boot_project.dto.BallotResponse;
@@ -112,9 +115,6 @@ public class BallotService {
         System.out.println("🚀 createBallot() method started");
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // System.out.println("🔐 [createBallot] Current authentication: " + auth);
-        // System.out.println("👤 [createBallot] Principal: " + auth.getPrincipal());
-        // System.out.println("🎫 [createBallot] Authorities: " + auth.getAuthorities());
         // Get authenticated user from the secure context
         String userEmail = auth.getName();
         User admin = userRepository.findByEmail(userEmail)
@@ -141,16 +141,27 @@ public class BallotService {
 
         ballot.setOptions(request.getOptions());
 
-        Ballot createdballotInDB = ballotRepository.save(ballot);
+        // --- 暫時不要在這裡保存到數據庫 ---
+        // Ballot createdballotInDB = ballotRepository.save(ballot);
 
         // Calling Smart Contract
+        TransactionReceipt receipt = null; // 將 receipt 宣告在 try 外面
         try {
-            System.out.println("Interacting with smart contract...");
-            System.out.println("Contract address: " + contractAddress);
-            System.out.println("Web3j URL: " + web3j.web3ClientVersion().send().getWeb3ClientVersion());
+            System.out.println("--- PRE-FLIGHT CHECK ---");
+            System.out.println("Contract Address from properties: " + contractAddress);
+            if (contractAddress == null || contractAddress.isBlank() || "0x0".equals(contractAddress)) {
+                throw new IllegalStateException("Contract address is invalid!");
+            }
+
+            System.out.println("Verifying contract code exists at address...");
+            String code = web3j.ethGetCode(contractAddress, DefaultBlockParameterName.LATEST).send().getCode();
+            if (code == null || "0x".equals(code)) {
+                throw new IllegalStateException("No contract deployed at address: " + contractAddress + ". Please redeploy!");
+            }
+            System.out.println("Contract code found. Length: " + code.length());
             
             BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
-            BigInteger gasLimit = BigInteger.valueOf(300_000L);
+            BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
             ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
 
             // Loading the deployed contract
@@ -168,24 +179,29 @@ public class BallotService {
                 .map(User::getWalletAddress)
                 .collect(Collectors.toList());
 
-            System.out.println("Calling createBallot with:");
-            System.out.println("- title: " + request.getTitle());
+            // --- 更嚴格的參數驗證 ---
+            System.out.println("--- STRICT PARAMETER VALIDATION ---");
+            System.out.println("Title: " + request.getTitle());
+            if (request.getTitle() == null || request.getTitle().isBlank()) throw new IllegalStateException("Title cannot be empty.");
+            
             System.out.println("Start Time (Epoch Seconds): " + startTimeSeconds);
             System.out.println("Current Time (Epoch Seconds): " + System.currentTimeMillis() / 1000);
-            System.out.println("- durationSeconds: " + durationSeconds);
-            System.out.println("Proposal Names Count: " + proposalNames.size());
-            System.out.println("Proposal Names: " + proposalNames);
-            System.out.println("Voter Addresses Count: " + voterAddresses.size());
-            System.out.println("Voter Addresses: " + voterAddresses);
-            if (voterAddresses.stream().anyMatch(addr -> addr == null || addr.trim().isEmpty())) {
-                System.out.println("!!! ERROR: Found null or empty wallet address in the list.");
-                throw new RuntimeException("One or more qualified voters do not have a wallet address set.");
-            }
-            System.out.println("- gasLimit: " + gasLimit);
-            System.out.println("- gasPrice: " + gasPrice);
+            if (startTimeSeconds <= (System.currentTimeMillis() / 1000) + 5) throw new IllegalStateException("Start time must be at least 5 seconds in the future.");
 
+            System.out.println("Proposal Names Count: " + proposalNames.size());
+            if (proposalNames.size() < 2) throw new IllegalStateException("Must have at least two proposals.");
+
+            System.out.println("Voter Addresses Count: " + voterAddresses.size());
+            if (voterAddresses.isEmpty()) throw new IllegalStateException("Must have at least one voter.");
+            for (String addr : voterAddresses) {
+                if (addr == null || !addr.matches("^0x[a-fA-F0-9]{40}$")) {
+                    throw new IllegalStateException("Invalid Ethereum address found: " + addr);
+                }
+            }
+            System.out.println("All parameters seem valid. Sending transaction...");
+            
             // Calling createBallot() method and send
-            TransactionReceipt receipt = contract.createBallot(
+            receipt = contract.createBallot(
                 request.getTitle(), 
                 BigInteger.valueOf(startTimeSeconds), 
                 BigInteger.valueOf(durationSeconds),
@@ -193,13 +209,23 @@ public class BallotService {
                 voterAddresses
             ).send();
 
-            System.out.println("Smart Contract transaction successful. Hash: " + receipt.getTransactionHash());
+            System.out.println("--- TRANSACTION MINED ---");
+            System.out.println("Transaction successful. Hash: " + receipt.getTransactionHash());
             System.out.println("Gas used: " + receipt.getGasUsed());
+            System.out.println("Status: " + receipt.getStatus());
+
+            if (!receipt.isStatusOK()) {
+                // 即使 Web3j 應該會拋出異常，我們也自己檢查一次
+                throw new TransactionException("Transaction failed with status: " + receipt.getStatus(), receipt);
+            }
+
+            // --- 交易成功後，再保存到數據庫 ---
+            Ballot createdballotInDB = ballotRepository.save(ballot);
 
             List<Voting.BallotCreatedEventResponse> events = contract.getBallotCreatedEvents(receipt);
             if(events.isEmpty()) throw new RuntimeException("No BallotCreated event found");
             Long blockchainBallotId = events.get(0).ballotId.longValue();
-            createdballotInDB.setBlockchainBallotId(blockchainBallotId);  // Return ballot ID on blockchain
+            createdballotInDB.setBlockchainBallotId(blockchainBallotId);
 
             List<Voting.ProposalCreatedEventResponse> proposalEvents = contract.getProposalCreatedEvents(receipt);
             if(proposalEvents.isEmpty() || proposalEvents.size() != request.getOptions().size()) {
@@ -214,15 +240,16 @@ public class BallotService {
             }
 
             ballotRepository.save(createdballotInDB);
+            return convertToBallotResponse(createdballotInDB);
+
         } catch (Exception e) {
             System.out.println("Failed interacting with smart contract: " + e.getMessage());
             System.out.println("Exception type: " + e.getClass().getSimpleName());
             e.printStackTrace();
-            ballotRepository.delete(createdballotInDB);
+            // --- 因為我們還沒保存 ballot，所以不需要刪除 ---
+            // ballotRepository.delete(createdballotInDB); 
             throw new RuntimeException("Failed to create ballot on the blockchain: " + e.getMessage(), e);
         }
-
-        return convertToBallotResponse(createdballotInDB);
     }
 
     @PreAuthorize("hasAuthority('ElectoralAdmin')")

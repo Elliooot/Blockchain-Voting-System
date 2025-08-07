@@ -6,7 +6,6 @@ contract Voting {
         bool isRegistered;
         bool hasVoted;
         uint256 vote;
-        bytes32 voteHash;
     }
     struct Proposal {
         uint256 index;
@@ -21,15 +20,15 @@ contract Voting {
         bool terminated;
         string result;
         address admin;
-        mapping(address => Voter) voters;
-        mapping(uint256 => Proposal) proposals;
         uint256 proposalCount;
-        mapping(bytes32 => bool) commitments;
     }
     
     
     mapping(uint256 => Ballot) public ballots;
-    uint256 public nextBallotId;
+    mapping(uint256 => mapping(address => Voter)) public votersByBallot;
+    mapping(uint256 => mapping(uint256 => Proposal)) public proposalsByBallot;
+
+    uint256 public nextBallotId = 1;
 
     event BallotCreated(uint256 ballotId, string title); // For Spring Boot to get the ballot ID
     event ProposalCreated(uint256 ballotId, uint256 proposalId, string name); // For Spring Boot to get the proposal ID
@@ -85,7 +84,7 @@ contract Voting {
         newBallot.proposalCount = _proposalNames.length;
 
         for(uint256 i = 0; i < _proposalNames.length; i++) {
-            newBallot.proposals[i] = Proposal({
+            proposalsByBallot[ballotId][i] = Proposal({
                 index: i,
                 name: _proposalNames[i],
                 voteCount: 0
@@ -96,8 +95,8 @@ contract Voting {
         for(uint256 i = 0; i < _voters.length; i++) {
             address voterAddress = _voters[i];
             require(voterAddress != address(0), "Invalid voter address");
-            require(!newBallot.voters[voterAddress].isRegistered, "Voter is already registered");
-            newBallot.voters[voterAddress].isRegistered = true;
+            require(!votersByBallot[ballotId][voterAddress].isRegistered, "Voter is already registered");
+            votersByBallot[ballotId][voterAddress].isRegistered = true;
         }
 
         emit BallotCreated(ballotId, _title);
@@ -105,10 +104,9 @@ contract Voting {
 
     function addProposal(uint256 _ballotId, string memory _name) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
         Ballot storage ballot = ballots[_ballotId];
+        uint256 newProposalId = ballot.proposalCount;
 
-        uint256 newProposalId = ballots[_ballotId].proposalCount;
-
-        ballots[_ballotId].proposals[newProposalId] = Proposal({
+        proposalsByBallot[_ballotId][newProposalId] = Proposal({
             index: newProposalId,
             name: _name,
             voteCount: 0
@@ -119,12 +117,12 @@ contract Voting {
     }
 
     function vote(uint256 _ballotId, uint256 _proposalId) public onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
-        require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
-        require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
+        require(votersByBallot[_ballotId][msg.sender].isRegistered, "You must be registered to vote");
+        require(!votersByBallot[_ballotId][msg.sender].hasVoted, "You have already voted");
 
-        ballots[_ballotId].voters[msg.sender].hasVoted = true;
-        ballots[_ballotId].voters[msg.sender].vote = _proposalId;
-        ballots[_ballotId].proposals[_proposalId].voteCount += 1;
+        votersByBallot[_ballotId][msg.sender].hasVoted = true;
+        votersByBallot[_ballotId][msg.sender].vote = _proposalId;
+        proposalsByBallot[_ballotId][_proposalId].voteCount += 1;
 
         emit VoteRecorded(msg.sender, _ballotId, _proposalId);
     }
@@ -158,7 +156,7 @@ contract Voting {
         uint256[] memory counts = new uint256[](proposalCount);
 
         for(uint256 i = 0; i < proposalCount; i++) {
-            counts[i] = ballots[_ballotId].proposals[i].voteCount;
+            counts[i] = proposalsByBallot[_ballotId][i].voteCount;
         }
 
         return counts;
@@ -171,11 +169,11 @@ contract Voting {
         uint256 tieCount = 0;
         string memory result;
         for (uint256 i = 0; i < proposalCount; i++) {
-            if(ballots[_ballotId].proposals[i].voteCount > maxVoteCount) {
-                maxVoteCount = ballots[_ballotId].proposals[i].voteCount;
+            if(proposalsByBallot[_ballotId][i].voteCount > maxVoteCount) {
+                maxVoteCount = proposalsByBallot[_ballotId][i].voteCount;
                 maxVoteProposals[0] = i;
                 tieCount = 1;
-            } else if (ballots[_ballotId].proposals[i].voteCount == maxVoteCount) {
+            } else if (proposalsByBallot[_ballotId][i].voteCount == maxVoteCount) {
                 maxVoteProposals[tieCount] = i;
                 tieCount++;
             }
@@ -186,7 +184,7 @@ contract Voting {
             if (i > 0) {
                 result = string(abi.encodePacked(result, ", "));
             }
-            result = string(abi.encodePacked(result, ballots[_ballotId].proposals[maxVoteProposals[i]].name));
+            result = string(abi.encodePacked(result, proposalsByBallot[_ballotId][maxVoteProposals[i]].name));
         }
 
         ballots[_ballotId].result = result;
@@ -202,22 +200,18 @@ contract Voting {
     }
 
     function registerVoter(uint256 _ballotId, address voter) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
-        require(!ballots[_ballotId].voters[voter].isRegistered, "Voter is already registered");
+        require(!votersByBallot[_ballotId][voter].isRegistered, "Voter is already registered");
 
-        ballots[_ballotId].voters[voter].isRegistered = true;
-        ballots[_ballotId].voters[voter].hasVoted = false;
-        ballots[_ballotId].voters[voter].vote = 0;
+        votersByBallot[_ballotId][voter].isRegistered = true;
+        votersByBallot[_ballotId][voter].hasVoted = false;
+        votersByBallot[_ballotId][voter].vote = 0;
     }
     
     function getProposal(uint256 _ballotId, uint256 _proposalId) public view returns (Proposal memory) {
-        return ballots[_ballotId].proposals[_proposalId];
+        return proposalsByBallot[_ballotId][_proposalId];
     }
 
     function getVoter(uint256 _ballotId, address _voterAddress) public view returns(Voter memory) {
-        return ballots[_ballotId].voters[_voterAddress];
-    }
-
-    function getCommitment(uint256 _ballotId, bytes32 _commitment) public view returns (bool) {
-        return ballots[_ballotId].commitments[_commitment];
+        return votersByBallot[_ballotId][_voterAddress];
     }
 }
