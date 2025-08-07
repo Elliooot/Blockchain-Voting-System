@@ -115,10 +115,10 @@ export const loadUserWallet = async () => {
     try {
         const response = await apiClient.get('/user/get_wallet');
         console.log("Loaded wallet address:", response.data);
-        return response.data;
+        return response.data.walletAddress;
     } catch (error) {
         console.error("Error loading wallet address: " + error);
-        throw error;
+        return null;
     }
 };
 

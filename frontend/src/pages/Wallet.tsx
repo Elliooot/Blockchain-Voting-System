@@ -15,7 +15,6 @@ declare global {
 }
 
 function Wallet() {
-    const [accounts, setAccounts] = useState<string[] | null>(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
@@ -23,10 +22,23 @@ function Wallet() {
     const [savedWalletAddress, setSavedWalletAddress] = useState<string | null>(null);
 
     useEffect(() => {
-        loadUserWallet();
+        const fetchAndSetWallet = async () => {
+            try {
+                const addressInDB = await loadUserWallet();
+
+                if(addressInDB) {
+                    console.log("Loaded wallet address from database: " + addressInDB);
+                    setSavedWalletAddress(addressInDB);
+                }
+            } catch (error) {
+                console.error("Failed to load wallet address from database: " + error);
+            }
+        };
+
+        fetchAndSetWallet();
     }, []);
 
-    const connectWallet = async () => {
+    const connectAndSaveWallet = async () => {
         if (isConnecting) {
             console.log("Already connecting, please wait...");
             return;
@@ -42,41 +54,23 @@ function Wallet() {
 
         try {
             const newAccounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-            setAccounts(newAccounts);
+            const newAddress = newAccounts[0];
             console.log("Connected to account: ", newAccounts[0]);
 
+            if(newAddress){
+                await updateWalletAddress(newAddress);
+                setSavedWalletAddress(newAddress);
+                console.log("Wallet address saved: " + newAddress);
+            }
         } catch (error: any) {
             console.error("Connection failed:", error);
-            if (error.code === -32002) {
-                setError("MetaMask is already processing a request. Please check MetaMask and try again.");
-            } else if (error.code === 4001) {
+            if (error.code === 4001) {
                 setError("Connection rejected by user.");
             } else {
                 setError("Failed to connect wallet. Please try again.");
             }
         } finally {
             setIsConnecting(false);
-        }
-    };
-
-    const saveWalletAddress = async () => {
-        if(!accounts || accounts.length === 0) {
-            setError("Please connect your wallet first.");
-            return;
-        }
-
-        setIsSaving(true);
-        setError(null);
-        
-        try {
-            const response = await updateWalletAddress(accounts[0]);
-            setSavedWalletAddress(accounts[0]);
-            console.log("Wallet address saved: " + response);
-        } catch (error) {
-            console.error("Failed to save wallet address: " + error);
-            setError("Failed to save wallet address. Please try again.");
-        } finally {
-            setIsSaving(false);
         }
     };
 
@@ -96,11 +90,6 @@ function Wallet() {
         }
     }
 
-    const disconnectWallet = () => {
-        setAccounts(null);
-        setError(null);
-    };
-
     return (
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
             <div className="max-w-4xl mx-auto">
@@ -115,12 +104,12 @@ function Wallet() {
                     )}
 
                     {/* Show saved wallet address */}
-                    {savedWalletAddress && (
+                    {savedWalletAddress ? (
                         <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
-                            <h3 className="text-lg font-semibold text-blue-800 mb-2">Saved Wallet Address</h3>
+                            <h3 className="text-lg font-semibold text-blue-800 mb-2">Connected Wallet Address</h3>
                             <p className="text-blue-700 font-mono text-sm break-all">{savedWalletAddress}</p>
                             <button 
-                                className={`mt-2 font-bold py-1 px-3 rounded text-sm ${
+                                className={`mt-4 font-bold py-2 px-4 rounded text-sm ${
                                     isRemoving 
                                         ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
                                         : 'bg-red-500 hover:bg-red-600 text-white'
@@ -128,50 +117,20 @@ function Wallet() {
                                 onClick={removeWalletFromDB}
                                 disabled={isRemoving}
                             >
-                                {isRemoving ? 'Removing...' : 'Remove from Database'}
+                                {isRemoving ? 'Disconnecting...' : 'Disconnect and Remove'}
                             </button>
-                        </div>
-                    )}
-
-                    {accounts && accounts.length > 0 ? (
-                        <div className="card">
-                            <h2 className="text-xl font-semibold mb-4">Account Details</h2>
-                            <p className="mb-4"><strong>Address:</strong> {accounts[0]}</p>
-
-                            <div className="space-x-2">
-                                {accounts[0] !== savedWalletAddress && (
-                                    <button 
-                                        className={`font-bold py-2 px-4 rounded ${
-                                            isSaving 
-                                                ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                                                : 'bg-green-500 hover:bg-green-600 text-white'
-                                        }`}
-                                        onClick={saveWalletAddress}
-                                        disabled={isSaving}
-                                    >
-                                        {isSaving ? 'Saving...' : 'Save Wallet Address'}
-                                    </button>
-                                )}
-                                
-                                {/* <button 
-                                    className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
-                                    onClick={disconnectWallet}
-                                >
-                                    Disconnect Wallet
-                                </button> */}
-                            </div>
                         </div>
                     ) : (
                         <button 
-                            className={`w-72 font-bold py-2 px-4 rounded ${
+                            className={`w-full max-w-sm mx-auto font-bold py-3 px-4 rounded ${
                                 isConnecting 
                                     ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
-                                    : 'bg-transparent text-red-500 hover:bg-red-500 hover:text-white border border-red-500'
+                                    : 'bg-blue-600 hover:bg-blue-700 text-white'
                             }`}
-                            onClick={connectWallet}
+                            onClick={connectAndSaveWallet}
                             disabled={isConnecting}
                         >
-                            {isConnecting ? 'Connecting...' : 'Connect to MetaMask Wallet'}
+                            {isConnecting ? 'Connecting...' : 'Connect and Save MetaMask Wallet'}
                         </button>
                     )}
                 </div>
