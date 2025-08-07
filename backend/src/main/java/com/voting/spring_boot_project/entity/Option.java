@@ -34,6 +34,5 @@ public class Option {
     private String name;
     private String description;
     private int voteCount;
-    private int displayOrder;
 
 }

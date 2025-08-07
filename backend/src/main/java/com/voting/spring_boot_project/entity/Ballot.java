@@ -8,6 +8,7 @@ import java.util.List;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -67,7 +68,9 @@ public class Ballot {
     // @Column(name = "contract_address", nullable = false, length = 255, unique = true)
     private String contractAddress;
 
-    private String result;
+    @ElementCollection
+    @Column(name = "result_option_ids")
+    private List<Integer> resultOptionIds = new ArrayList<>();
 
     @Transient // Not to map this method
     public Status getCurrentStatus() {

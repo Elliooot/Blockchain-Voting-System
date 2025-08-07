@@ -18,7 +18,7 @@ contract Voting {
         uint256 startTime;
         uint256 duration;
         bool terminated;
-        string result;
+        uint256[] resultProposalIds;
         address admin;
         uint256 proposalCount;
     }
@@ -33,7 +33,7 @@ contract Voting {
     event BallotCreated(uint256 ballotId, string title); // For Spring Boot to get the ballot ID
     event ProposalCreated(uint256 ballotId, uint256 proposalId, string name); // For Spring Boot to get the proposal ID
     event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalId); // For Spring Boot to get the vote details
-    event BallotResultFinalized(uint256 ballotId, string result); // For Spring Boot to get the final result
+    event BallotResultFinalized(uint256 ballotId, uint256[] resultProposalIds); // For Spring Boot to get the final result
 
     modifier onlyAdmin(uint256 _ballotId) {
         require(msg.sender == ballots[_ballotId].admin, "Only admin can perform this action");
@@ -63,7 +63,16 @@ contract Voting {
         _;
     }
 
+    address public contractAdmin;
+
+    modifier onlyContractAdmin() {
+        require(msg.sender == contractAdmin, "Only contract admin can perform this action");
+        _;
+    }
+
     constructor() {
+        // Set the contract deployer as the admin since he will also call the contract when voters vote
+        contractAdmin = msg.sender; 
     }
 
     function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public {
@@ -79,7 +88,7 @@ contract Voting {
         newBallot.startTime = _startTime;
         newBallot.duration = _duration;
         newBallot.terminated = false;
-        newBallot.result = "";
+        newBallot.resultProposalIds = new uint256[](_proposalNames.length);
         newBallot.admin = msg.sender;
         newBallot.proposalCount = _proposalNames.length;
 
@@ -116,15 +125,15 @@ contract Voting {
         emit ProposalCreated(_ballotId, newProposalId, _name);
     }
 
-    function vote(uint256 _ballotId, uint256 _proposalId) public onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){
-        require(votersByBallot[_ballotId][msg.sender].isRegistered, "You must be registered to vote");
-        require(!votersByBallot[_ballotId][msg.sender].hasVoted, "You have already voted");
+    function vote(uint256 _ballotId, uint256 _proposalId, address _voterAddress) public whenNotTerminated(_ballotId) onlyContractAdmin {
+        require(votersByBallot[_ballotId][_voterAddress].isRegistered, "Voter is not registered");
+        require(!votersByBallot[_ballotId][_voterAddress].hasVoted, "Voter has already voted");
 
-        votersByBallot[_ballotId][msg.sender].hasVoted = true;
-        votersByBallot[_ballotId][msg.sender].vote = _proposalId;
+        votersByBallot[_ballotId][_voterAddress].hasVoted = true;
+        votersByBallot[_ballotId][_voterAddress].vote = _proposalId;
         proposalsByBallot[_ballotId][_proposalId].voteCount += 1;
 
-        emit VoteRecorded(msg.sender, _ballotId, _proposalId);
+        emit VoteRecorded(_voterAddress, _ballotId, _proposalId);
     }
 
     // function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){ // Commit a vote using a hash to achieve anonymous voting
@@ -165,34 +174,34 @@ contract Voting {
     function finalizeResult(uint256 _ballotId) public onlyAdmin(_ballotId) onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId){
         uint256 maxVoteCount = 0;
         uint256 proposalCount = ballots[_ballotId].proposalCount;
-        uint256[] memory maxVoteProposals = new uint256[](proposalCount);
-        uint256 tieCount = 0;
-        string memory result;
+
         for (uint256 i = 0; i < proposalCount; i++) {
             if(proposalsByBallot[_ballotId][i].voteCount > maxVoteCount) {
                 maxVoteCount = proposalsByBallot[_ballotId][i].voteCount;
-                maxVoteProposals[0] = i;
-                tieCount = 1;
-            } else if (proposalsByBallot[_ballotId][i].voteCount == maxVoteCount) {
-                maxVoteProposals[tieCount] = i;
+            } 
+        }
+
+        uint256[] memory winningProposalIds = new uint256[](proposalCount);
+        uint256 tieCount = 0;
+
+        for (uint256 i = 0; i < proposalCount; i++) {
+            if (proposalsByBallot[_ballotId][i].voteCount == maxVoteCount) {
+                winningProposalIds[tieCount] = i;
                 tieCount++;
             }
         }
 
-        result = "";
+        uint256[] memory finalResultIds = new uint256[](tieCount);
         for (uint256 i = 0; i < tieCount; i++) {
-            if (i > 0) {
-                result = string(abi.encodePacked(result, ", "));
-            }
-            result = string(abi.encodePacked(result, proposalsByBallot[_ballotId][maxVoteProposals[i]].name));
+            finalResultIds[i] = winningProposalIds[i];
         }
 
-        ballots[_ballotId].result = result;
-        emit BallotResultFinalized(_ballotId, result);
+        ballots[_ballotId].resultProposalIds = finalResultIds;
+        emit BallotResultFinalized(_ballotId, finalResultIds);
     } 
 
-    function getResult(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (string memory) {
-        return ballots[_ballotId].result;
+    function getResult(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (uint256[] memory) {
+        return ballots[_ballotId].resultProposalIds;
     }
 
     function terminateVoting(uint256 _ballotId) public onlyAdmin(_ballotId) {

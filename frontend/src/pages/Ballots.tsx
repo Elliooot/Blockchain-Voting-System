@@ -211,9 +211,9 @@ function Ballots() {
             <div key={columnStatus} className="bg-gray-200 p-5 rounded-lg w-full md:w-1/2 lg:w-1/3">
                 <div className="flex items-start justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-800 whitespace-nowrap">{columnStatus}</h3>
-                <button className="bg-transparent border-none cursor-pointer p-1 rounded hover:bg-gray-300">
+                {/* <button className="bg-transparent border-none cursor-pointer p-1 rounded hover:bg-gray-300">
                     <span className="text-lg text-gray-600">⋯</span>
-                </button>
+                </button> */}
                 </div>
                 
                 {tasks

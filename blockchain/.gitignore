@@ -1,0 +1,12 @@
+# Hardhat folders
+/artifacts/
+/cache/
+/coverage/
+/coverage.json
+/typechain-types
+
+# Node.js folders
+/node_modules
+
+# Environment variables
+.env

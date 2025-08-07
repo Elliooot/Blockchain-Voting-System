@@ -21,7 +21,6 @@ import com.voting.spring_boot_project.dto.VoteResponse;
 import com.voting.spring_boot_project.entity.Option;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.entity.Vote;
-import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.OptionRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
 import com.voting.spring_boot_project.repository.VoteRepository;
@@ -46,24 +45,13 @@ public class VotingService {
 
         System.out.println("castVote() method started");
 
-        // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // String userEmail = auth.getName();
-        // User voter = userRepository.findByEmail(userEmail)
-        //         .orElseThrow(() -> new RuntimeException("Voter not found"));
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        User voter = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Voter not found"));
 
         Option selectedOption = optionRepository.findById(request.getOptionId())
-            .orElseThrow();
-        
-        var newVote = Vote.builder()
-            .option(selectedOption)
-            .ballot(selectedOption.getBallot())
-            .timestamp(new Date())
-            .isSuccess(true)
-            .build();
-
-        System.out.println("Vote Option: " + newVote.getOption().getName());
-
-        Vote savedVote = voteRepository.save(newVote);
+            .orElseThrow(() -> new RuntimeException("Option not found"));
 
         try {
             System.out.println("Interacting wiht smart contract...");
@@ -75,29 +63,38 @@ public class VotingService {
             // Loading the deployed contract
             Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
 
-            long ballotId = request.getBlockchainBallotId();
-            long optionId = request.getOptionId();
+            BigInteger blockchainBallotId = BigInteger.valueOf(selectedOption.getBallot().getBlockchainBallotId());
+            BigInteger blockchainOptionId = BigInteger.valueOf(selectedOption.getBlockchainOptionId());
+            String voterWalletAddress = voter.getWalletAddress();
+
+            System.out.println("Casting vote on blockchain for ballotId: " + blockchainBallotId + ", optionId: " + blockchainOptionId + ", voterAddress: " + voterWalletAddress);
 
             // Calling vote() method and send
-            TransactionReceipt receipt = contract.vote(BigInteger.valueOf(ballotId), BigInteger.valueOf(optionId)).send();
+            TransactionReceipt receipt = contract.vote(blockchainBallotId, blockchainOptionId, voterWalletAddress).send();
 
-            System.out.println("Vote transaction hash: " + receipt.getTransactionHash());
-            System.out.println("Gas used: " + receipt.getGasUsed());
+            System.out.println("Vote transaction successful. Hash: " + receipt.getTransactionHash());
 
-            voteRepository.save(savedVote);
+            var newVote = Vote.builder()
+                .option(selectedOption)
+                .ballot(selectedOption.getBallot())
+                .user(voter)
+                .timestamp(new Date())
+                .transactionHash(receipt.getTransactionHash())
+                .isSuccess(true)
+                .build();
+
+            Vote savedVote = voteRepository.save(newVote);
+            
+            return VoteResponse.builder()
+                .voteId(savedVote.getId())
+                .optionId(savedVote.getOption().getId())
+                .optionName(savedVote.getOption().getName())
+                .timestamp(savedVote.getTimestamp())
+                .build();
+                
         } catch (Exception e) {
             System.out.println("Failed to interact with smart contract: " + e.getMessage());
-            savedVote.setSuccess(false);
-            voteRepository.delete(savedVote);
             throw new RuntimeException("Failed to cast vote on the blockchain");
         }
-
-        return VoteResponse.builder()
-            .voteId(savedVote.getId())
-            .optionId(savedVote.getOption().getId())
-            .optionName(savedVote.getOption().getName())
-            .timestamp(savedVote.getTimestamp())
-            .message("Vote cast successfully")
-            .build();
     }
 }

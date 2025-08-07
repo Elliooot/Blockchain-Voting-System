@@ -23,9 +23,3 @@ out/
 **/target/
 *.jar
 *.war
-
-# Hardhat specific
-/blockchain/artifacts/
-/blockchain/cache/
-/blockchain/coverage/
-/blockchain/coverage.json
