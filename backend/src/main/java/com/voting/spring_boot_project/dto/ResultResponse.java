@@ -18,7 +18,8 @@ public class ResultResponse {
     private String description;
     private Date startTime;
     private Date endTime;
-    private List<String> resultOptionNames;
+    private List<String> optionNames;
     private List<Integer> voteCounts;
     private Long totalVotes;
+    private List<String> resultOptionNames;
 }

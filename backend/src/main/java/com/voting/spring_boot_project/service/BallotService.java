@@ -1,6 +1,7 @@
 package com.voting.spring_boot_project.service;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.math.BigInteger;
@@ -22,6 +23,7 @@ import com.voting.spring_boot_project.contract.Voting;
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
 import com.voting.spring_boot_project.dto.OptionResponse;
+import com.voting.spring_boot_project.dto.ResultResponse;
 import com.voting.spring_boot_project.dto.UpdateBallotRequest;
 import com.voting.spring_boot_project.entity.Ballot;
 import com.voting.spring_boot_project.entity.Option;
@@ -29,6 +31,7 @@ import com.voting.spring_boot_project.entity.Role;
 import com.voting.spring_boot_project.entity.Status;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.BallotRepository;
+import com.voting.spring_boot_project.repository.OptionRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -36,8 +39,9 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class BallotService {
-    private final BallotRepository ballotRepository;
     private final UserRepository userRepository; // get the current user entity
+    private final BallotRepository ballotRepository;
+    private final OptionRepository optionRepository;
 
     private final Web3j web3j;
     private final Credentials credentials;
@@ -274,6 +278,58 @@ public class BallotService {
         ballotRepository.save(ballotToUpdate);
 
         return convertToBallotResponse(ballotToUpdate);
+    }
+
+    public List<ResultResponse> getResultForCurrentUser() {
+        System.out.println("🚀 getResultForCurrentUser() method started");
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Ballot> ballots = ballotRepository.findVotedAndEndedBallots(currentUser, Status.Ended);
+
+        System.out.println("Found " + ballots.size() + " ballots");
+
+        return ballots.stream()
+                .map(this::convertToResultResponse)
+                .collect(Collectors.toList());
+    }
+
+    public ResultResponse convertToResultResponse(Ballot ballot){ // ballot's title, description, result and option's vote count and total voter
+
+        Date endTime = new Date(ballot.getStartTime().getTime() + ballot.getDuration().toMillis());
+        
+        List<String> optionNames = ballot.getOptions().stream()
+                .map(Option::getName)
+                .toList();
+        
+        List<Integer> voteCounts = ballot.getOptions().stream()
+                .map(Option::getVoteCount)
+                .toList();
+
+        Long totalVotes = voteCounts.stream()
+                .mapToLong(count -> count)
+                .sum();
+                
+        List<String> resultOptionNames = ballot.getResultOptionIds().stream()
+                .map(optionId -> optionRepository.findById(optionId)
+                    .map(option -> option.getName())
+                    .orElse("Unknown"))
+                .toList();
+
+        return ResultResponse.builder()
+                .ballotId(ballot.getId())
+                .title(ballot.getTitle())
+                .description(ballot.getDescription())
+                .startTime(ballot.getStartTime())
+                .endTime(endTime)
+                .optionNames(optionNames)
+                .voteCounts(voteCounts)
+                .totalVotes(totalVotes)
+                .resultOptionNames(resultOptionNames)
+                .build();
     }
 
     private BallotResponse convertToBallotResponse(Ballot ballot) {

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
+import com.voting.spring_boot_project.dto.ResultResponse;
 import com.voting.spring_boot_project.dto.UpdateBallotRequest;
 import com.voting.spring_boot_project.service.BallotService;
 
@@ -65,5 +66,10 @@ public class BallotController {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Ballot id: " + id + " delete successfully");
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/result")
+    public ResponseEntity<List<ResultResponse>> getBallotResult() {
+        return ResponseEntity.ok(ballotService.getResultForCurrentUser());
     }
 }

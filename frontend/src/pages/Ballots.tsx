@@ -22,7 +22,6 @@ interface ApiBallot {
     name: string;
     description: string;
     voteCount: number;
-    displayOrder: number;
   }>;
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
@@ -39,7 +38,6 @@ interface BallotTask {
     name: string;
     description: string;
     voteCount: number;
-    displayOrder: number;
   }>;
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
@@ -121,7 +119,7 @@ const TaskCard = ({
 
   return (
     <div className="bg-white mb-4 shadow-md p-4 rounded-lg">
-      <h2 className="text-gray-900 text-left mb-2 font-semibold truncate" title={title}>
+      <h2 className="text-gray-900 text-left mb-2 font-semibold truncate">
         {title}
       </h2>
       

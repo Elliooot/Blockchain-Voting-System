@@ -7,9 +7,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
-// import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -27,18 +25,17 @@ public class Vote {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "ballot_id")
+    @JoinColumn(name = "ballot_id", nullable = false)
     private Ballot ballot;
 
-    @OneToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User voter;
 
     @ManyToOne
-    @JoinColumn(name = "option_id")
+    @JoinColumn(name = "option_id", nullable = false)
     private Option option;
 
-    private Date timestamp;
     private String transactionHash;
-    private boolean isSuccess;
+    private Date timestamp;
 }

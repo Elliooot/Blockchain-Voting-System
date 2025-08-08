@@ -77,6 +77,17 @@ export const fetchBallotById = async (ballotId: number) => {
     }
 };
 
+export const fetchBallotResult = async () => {
+    try {
+        const reponse = await apiClient.get('/ballots/result');
+        console.log("Fetched ballot result: " + reponse.data);
+        return reponse.data;
+    } catch (error) {
+        console.error("Error fetching ballot result: " + error);
+        throw error;
+    }
+};
+
 export const deleteBallot = async (ballotId: number) => {
     try {
         const response = await apiClient.delete('ballots/delete/' + ballotId);

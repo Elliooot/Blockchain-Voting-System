@@ -41,7 +41,7 @@ public class VotingService {
     private String contractAddress;
 
     @PreAuthorize("hasAuthority('Voter')")
-    public VoteResponse castVote(VoteRequest request){
+    public VoteResponse castVote(VoteRequest request){ // Contract deployer calls the contract and acts as proxy to vote using its private key and voters address
 
         System.out.println("castVote() method started");
 
@@ -77,10 +77,9 @@ public class VotingService {
             var newVote = Vote.builder()
                 .option(selectedOption)
                 .ballot(selectedOption.getBallot())
-                .user(voter)
+                .voter(voter)
                 .timestamp(new Date())
                 .transactionHash(receipt.getTransactionHash())
-                .isSuccess(true)
                 .build();
 
             Vote savedVote = voteRepository.save(newVote);

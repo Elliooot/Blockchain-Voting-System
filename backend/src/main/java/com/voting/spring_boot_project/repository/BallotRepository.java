@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.voting.spring_boot_project.entity.Ballot;
+import com.voting.spring_boot_project.entity.Status;
 import com.voting.spring_boot_project.entity.User;
 
 @Repository
@@ -18,4 +19,7 @@ public interface BallotRepository extends JpaRepository<Ballot, Integer>{
 
     @Query("SELECT b FROM Ballot b JOIN b.qualifiedVoters qv WHERE qv = :voter")
     List<Ballot> findBallotsForVoter(@Param("voter") User voter);
+
+    @Query("SELECT DISTINCT v.ballot FROM Vote v WHERE v.voter = :voter AND v.ballot.status = :status")
+    List<Ballot> findVotedAndEndedBallots(@Param("voter") User voter, @Param("status") Status status);
 }
