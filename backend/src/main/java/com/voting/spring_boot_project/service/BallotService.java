@@ -1,25 +1,23 @@
 package com.voting.spring_boot_project.service;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.math.BigInteger;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import org.web3j.protocol.Web3j;
 import org.web3j.crypto.Credentials;
-import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.tx.gas.DefaultGasProvider;
-import org.web3j.tx.gas.StaticGasProvider;
+import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import com.voting.spring_boot_project.contract.Voting;
+import org.web3j.tx.gas.ContractGasProvider;
+import org.web3j.tx.gas.StaticGasProvider;
 
+import com.voting.spring_boot_project.contract.Voting;
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
 import com.voting.spring_boot_project.dto.OptionResponse;
@@ -33,6 +31,7 @@ import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.OptionRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
+import com.voting.spring_boot_project.repository.VoteRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +41,7 @@ public class BallotService {
     private final UserRepository userRepository; // get the current user entity
     private final BallotRepository ballotRepository;
     private final OptionRepository optionRepository;
+    private final VoteRepository voteRepository;
 
     private final Web3j web3j;
     private final Credentials credentials;
@@ -73,7 +73,10 @@ public class BallotService {
             ballots = ballotRepository.findByAdmin(currentUser);
         } else if (currentUser.getRole() == Role.Voter) {
             System.out.println("🗳️ Fetching ballots for Voter");
-            ballots = ballotRepository.findBallotsForVoter(currentUser);
+            ballots = ballotRepository.findBallotsForVoter(currentUser)
+                .stream()
+                .filter(b -> !voteRepository.existsByBallotAndVoter(b, currentUser))
+                .collect(Collectors.toList());
         } else {
             System.out.println("❓ Unknown role, returning empty list");
             ballots = new ArrayList<>();

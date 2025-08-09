@@ -5,7 +5,6 @@ import Login from './Login'
 import Register from './Registration'
 import Dashboard from './Dashboard'
 import Overview from './pages/Overview'
-import Vote from './pages/Vote'
 import Result from './pages/Result'
 import Wallet from './pages/Wallet'
 import Profile from './pages/Profile'
@@ -31,7 +30,6 @@ function App() {
               <Route path='/dashboard' element={<Dashboard />}>
                 <Route index element={<Overview />} />
                 <Route path='/dashboard/overview' element={<Overview />} />
-                <Route path='/dashboard/vote' element={<Vote />} />
                 <Route path='/dashboard/result' element={<Result />} />
                 <Route path='/dashboard/wallet' element={<Wallet />} />
                 <Route path='/dashboard/profile' element={<Profile />} />
