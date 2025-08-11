@@ -35,10 +35,11 @@ contract Voting {
     event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalId); // For Spring Boot to get the vote details
     event BallotResultFinalized(uint256 ballotId, uint256[] resultProposalIds); // For Spring Boot to get the final result
 
-    modifier onlyAdmin(uint256 _ballotId) {
-        require(msg.sender == ballots[_ballotId].admin, "Only admin can perform this action");
-        _;
-    }
+    // Because I use proxy mode (using contract deployer to do every action), so cannot use this
+    // modifier onlyAdmin(uint256 _ballotId) {
+    //     require(msg.sender == ballots[_ballotId].admin, "Only admin can perform this action");
+    //     _;
+    // }
 
     modifier onlyBeforeVoting(uint256 _ballotId) {
         Ballot storage ballot = ballots[_ballotId];
@@ -75,7 +76,7 @@ contract Voting {
         contractAdmin = msg.sender; 
     }
 
-    function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public {
+    function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public onlyContractAdmin(){
         require(_startTime > block.timestamp, "Start time must be in the future");
         require(_proposalNames.length > 1, "Must have at least two proposals");
         require(_voters.length > 0, "Must have at least one voter");
@@ -111,18 +112,33 @@ contract Voting {
         emit BallotCreated(ballotId, _title);
     }
 
-    function addProposal(uint256 _ballotId, string memory _name) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
-        Ballot storage ballot = ballots[_ballotId];
-        uint256 newProposalId = ballot.proposalCount;
+    function updateBallotTitle(uint256 _ballotId, string memory _newTitle) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
+        ballots[_ballotId].title = _newTitle;
+    }
 
-        proposalsByBallot[_ballotId][newProposalId] = Proposal({
-            index: newProposalId,
-            name: _name,
-            voteCount: 0
-        });
-        
-        ballot.proposalCount++;
-        emit ProposalCreated(_ballotId, newProposalId, _name);
+    function updateStartTime(uint256 _ballotId, uint256 _newStartTime) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
+        require(_newStartTime > block.timestamp, "Start time must be in the future");
+        ballots[_ballotId].startTime = _newStartTime;
+    }
+
+    function updateDuration(uint256 _ballotId, uint256 _newDuration) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
+        ballots[_ballotId].duration = _newDuration;
+    }
+
+    function registerVoter(uint256 _ballotId, address voter) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
+        require(!votersByBallot[_ballotId][voter].isRegistered, "Voter is already registered");
+
+        votersByBallot[_ballotId][voter].isRegistered = true;
+        votersByBallot[_ballotId][voter].hasVoted = false;
+        votersByBallot[_ballotId][voter].vote = 0;
+    }
+
+    function unregisterVoter(uint256 _ballotId, address voter) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
+        require(votersByBallot[_ballotId][voter].isRegistered, "Voter is not registered");
+
+        votersByBallot[_ballotId][voter].isRegistered = false;
+        votersByBallot[_ballotId][voter].hasVoted = false;
+        votersByBallot[_ballotId][voter].vote = 0;
     }
 
     function vote(uint256 _ballotId, uint256 _proposalId, address _voterAddress) public whenNotTerminated(_ballotId) onlyContractAdmin {
@@ -136,30 +152,6 @@ contract Voting {
         emit VoteRecorded(_voterAddress, _ballotId, _proposalId);
     }
 
-    // function commitVote(uint256 _ballotId, bytes32 _commitment) external onlyDuringVoting(_ballotId) whenNotTerminated(_ballotId){ // Commit a vote using a hash to achieve anonymous voting
-    //     require(ballots[_ballotId].voters[msg.sender].isRegistered, "You must be registered to vote");
-    //     require(!ballots[_ballotId].voters[msg.sender].hasVoted, "You have already voted");
-    //     require(!ballots[_ballotId].commitments[_commitment], "Commitment already exists");
-
-
-    //     ballots[_ballotId].voters[msg.sender].hasVoted = true;
-    //     ballots[_ballotId].voters[msg.sender].voteHash = _commitment;
-    //     ballots[_ballotId].commitments[_commitment] = true;
-
-    //     emit VoteRecorded(msg.sender, _ballotId, _commitment);
-    // }
-
-    // function revealVote(uint256 _ballotId, uint256 _proposalId, bytes32 _salt) public onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) {
-    //     require(ballots[_ballotId].voters[msg.sender].hasVoted, "You have not committed a vote yet");
-    //     require(ballots[_ballotId].voters[msg.sender].voteHash == keccak256(abi.encodePacked(_proposalId, _salt)), "Invalid vote reveal");
-    //     bytes32 commitment = keccak256(abi.encodePacked(_proposalId, _salt));
-    //     require(ballots[_ballotId].commitments[commitment], "Invalid commitment");
-
-    //     ballots[_ballotId].voters[msg.sender].vote = _proposalId;
-    //     ballots[_ballotId].proposals[_proposalId].voteCount += 1;
-    //     ballots[_ballotId].commitments[commitment] = false; // Remove commitment after revealing
-    // }
-
     function getVoteCounts(uint256 _ballotId) public view onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId) returns (uint256[] memory) {
         uint256 proposalCount = ballots[_ballotId].proposalCount;
         uint256[] memory counts = new uint256[](proposalCount);
@@ -171,7 +163,7 @@ contract Voting {
         return counts;
     }
 
-    function finalizeResult(uint256 _ballotId) public onlyAdmin(_ballotId) onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId){
+    function finalizeResult(uint256 _ballotId) public onlyContractAdmin() onlyAfterVoting(_ballotId) whenNotTerminated(_ballotId){
         uint256 maxVoteCount = 0;
         uint256 proposalCount = ballots[_ballotId].proposalCount;
 
@@ -204,16 +196,8 @@ contract Voting {
         return ballots[_ballotId].resultProposalIds;
     }
 
-    function terminateVoting(uint256 _ballotId) public onlyAdmin(_ballotId) {
+    function terminateVoting(uint256 _ballotId) public onlyContractAdmin() {
         ballots[_ballotId].terminated = true;
-    }
-
-    function registerVoter(uint256 _ballotId, address voter) public onlyAdmin(_ballotId) onlyBeforeVoting(_ballotId) {
-        require(!votersByBallot[_ballotId][voter].isRegistered, "Voter is already registered");
-
-        votersByBallot[_ballotId][voter].isRegistered = true;
-        votersByBallot[_ballotId][voter].hasVoted = false;
-        votersByBallot[_ballotId][voter].vote = 0;
     }
     
     function getProposal(uint256 _ballotId, uint256 _proposalId) public view returns (Proposal memory) {

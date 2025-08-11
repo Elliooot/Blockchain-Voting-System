@@ -113,6 +113,7 @@ function CreateBallot() {
 
     const payload = {
       ...formData,
+      startTime: new Date(formData.startTime).toISOString(), // Convert to UTC
       duration: `PT${formData.duration}H`,  // Formatting duration
       qualifiedVoterIds: qualifiedVoterIds, // Add Id list to payload
     };

@@ -39,8 +39,6 @@ apiClient.interceptors.response.use(
         return response;
     },
     (error) => {
-        // console.error("❌ API Response error:", error.response?.status, error.response?.data);
-        // console.error("❌ API Error details:", error);
         return Promise.reject(error);
     }
 );
@@ -51,6 +49,16 @@ export const createBallot = async (ballotData: object) => {
         return response.data;
     } catch (error) {
         console.error("Failed to create ballot in apiService:", error);
+        throw error;
+    }
+};
+
+export const editBallot = async (ballotId: number, ballotData: object) => {
+    try {
+        const response = await apiClient.patch(`/ballots/update/${ballotId}`, ballotData);
+        return response.data;
+    } catch (error) {
+        console.error("Failed to edit ballot in apiService:", error);
         throw error;
     }
 };

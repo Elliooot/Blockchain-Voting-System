@@ -1,6 +1,7 @@
 package com.voting.spring_boot_project.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 // import java.util.Optional;
 
@@ -22,4 +23,9 @@ public interface BallotRepository extends JpaRepository<Ballot, Integer>{
 
     @Query("SELECT DISTINCT v.ballot FROM Vote v WHERE v.voter = :voter AND v.ballot.status = :status")
     List<Ballot> findVotedAndEndedBallots(@Param("voter") User voter, @Param("status") Status status);
+
+    @Query("SELECT b FROM Ballot b WHERE b.status = :endedStatus AND b.resultOptionIds IS EMPTY")
+    List<Ballot> findExpiredBallotsWithoutResults(@Param ("endedStatus") Status endedStatus);
+
+    Optional<Ballot> findByBlockchainBallotId(Long blockchainBallotId);
 }

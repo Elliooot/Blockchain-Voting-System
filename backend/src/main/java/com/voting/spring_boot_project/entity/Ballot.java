@@ -72,6 +72,9 @@ public class Ballot {
     @Column(name = "result_option_ids")
     private List<Integer> resultOptionIds = new ArrayList<>();
 
+    @OneToMany(mappedBy = "ballot", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Vote> voteRecord = new ArrayList<>();
+
     @Transient // Not to map this method
     public Status getCurrentStatus() {
         Instant now = Instant.now();

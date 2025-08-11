@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import Web3 from "web3";
 import { updateWalletAddress, loadUserWallet } from "../api/apiService";
 
 // To resolve the problem "Property 'ethereum' does not exist on type 'Window & typeof globalThis'."
@@ -16,7 +15,6 @@ declare global {
 
 function Wallet() {
     const [isConnecting, setIsConnecting] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [isRemoving, setIsRemoving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [savedWalletAddress, setSavedWalletAddress] = useState<string | null>(null);

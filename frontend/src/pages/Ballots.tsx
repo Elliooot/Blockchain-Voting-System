@@ -70,7 +70,7 @@ const TaskCard = ({
   }
 
   const handleEdit = () => {
-    navigate('/dashboard/ballots/edit');
+    navigate(`/dashboard/ballots/edit/${id}`);
   }
 
   const handleVote = () => {
@@ -87,7 +87,7 @@ const TaskCard = ({
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            {isAdmin && ( <button className={buttonStyle} title="Edit"><EditIcon fontSize="small" /></button> )}
+            {isAdmin && ( <button className={buttonStyle} title="Edit" onClick={handleEdit}><EditIcon fontSize="small" /></button> )}
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
         );

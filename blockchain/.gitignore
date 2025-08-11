@@ -5,6 +5,9 @@
 /coverage.json
 /typechain-types
 
+# Hardhat Ignition deployment state
+/ignition/deployments
+
 # Node.js folders
 /node_modules
 

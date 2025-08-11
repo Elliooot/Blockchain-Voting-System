@@ -3,6 +3,7 @@ package com.voting.spring_boot_project.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -56,6 +57,7 @@ public class BallotController {
     public ResponseEntity<BallotResponse> updateBallot(
         @PathVariable Integer id, @RequestBody UpdateBallotRequest request
     ) {
+        System.out.println("🎯 BallotController - updateBallot() called");
         return ResponseEntity.ok(ballotService.updateInfo(id, request));
     }
 

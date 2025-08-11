@@ -16,9 +16,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UpdateBallotRequest {
+    private Integer id;
     private String title;
     private String description;
     private Date startTime;
     private Duration duration;
     private List<Option> options;
+    private List<Integer> qualifiedVoterIds;
 }
