@@ -5,19 +5,28 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.web3j.abi.FunctionEncoder;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicArray;
+import org.web3j.abi.datatypes.Function;
+import org.web3j.abi.datatypes.Utf8String;
+import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.request.Transaction;
+import org.web3j.protocol.core.methods.response.EthEstimateGas;
+import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
@@ -109,12 +118,6 @@ public class BallotService {
 
     public BallotResponse getBallotById(Integer ballotId) {
         System.out.println("🚀 getBallotById() method started");
-        
-        // Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // String userEmail = auth.getName();
-        
-        // User currentUser = userRepository.findByEmail(userEmail)
-        //         .orElseThrow(() -> new RuntimeException("User not found"));
 
         Ballot ballot = ballotRepository.findById(ballotId)
             .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
@@ -122,17 +125,12 @@ public class BallotService {
         Option[] options = ballot.getOptions().toArray(new Option[0]);
         System.out.println("XOption size: " + options.length);
 
-        // List<OptionResponse> optionResponses = ballot.getOptions().stream()
-        //         .map(this::convertToOptionResponse)
-        //         .collect(Collectors.toList());
-
-        // Check if it is okay when response structure different with frontend (BallotData)
-
         return convertToBallotResponse(ballot);
     }
 
     
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
+    @Transactional
     public BallotResponse createBallot(CreateBallotRequest request) {
         System.out.println("🚀 createBallot() method started");
 
@@ -182,36 +180,79 @@ public class BallotService {
             long startTimeSeconds = request.getStartTime().toInstant().getEpochSecond();
             long durationSeconds = request.getDuration().getSeconds();
 
-            List<String> proposalNames = request.getOptions().stream()
-                .map(Option::getName)
-                .collect(Collectors.toList());
+            long proposalCount = request.getOptions().size();
 
             List<String> voterAddresses = qualifiedVoters.stream()
                 .map(User::getWalletAddress)
                 .collect(Collectors.toList());
 
-            System.out.println("Calling createBallot with:");
-            System.out.println("- title: " + request.getTitle());
-            System.out.println("Start Time (Epoch Seconds): " + startTimeSeconds);
-            System.out.println("Current Time (Epoch Seconds): " + System.currentTimeMillis() / 1000);
-            System.out.println("- durationSeconds: " + durationSeconds);
-            System.out.println("Proposal Names Count: " + proposalNames.size());
-            System.out.println("Proposal Names: " + proposalNames);
-            System.out.println("Voter Addresses Count: " + voterAddresses.size());
+            // System.out.println("Calling createBallot with:");
+            // System.out.println("- title: " + request.getTitle());
+            System.out.println("Start Time (Epoch Seconds): " + BigInteger.valueOf(startTimeSeconds));
+            // System.out.println("Current Time (Epoch Seconds): " + System.currentTimeMillis() / 1000);
+            System.out.println("- durationSeconds: " + BigInteger.valueOf(durationSeconds));
+            // System.out.println("Voter Addresses Count: " + voterAddresses.size());
             System.out.println("Voter Addresses: " + voterAddresses);
-            if (voterAddresses.stream().anyMatch(addr -> addr == null || addr.trim().isEmpty())) {
-                System.out.println("!!! ERROR: Found null or empty wallet address in the list.");
-                throw new RuntimeException("One or more qualified voters do not have a wallet address set.");
-            }
-            System.out.println("- gasLimit: " + gasLimit);
-            System.out.println("- gasPrice: " + gasPrice);
+            // if (voterAddresses.stream().anyMatch(addr -> addr == null || addr.trim().isEmpty())) {
+            //     System.out.println("!!! ERROR: Found null or empty wallet address in the list.");
+            //     throw new RuntimeException("One or more qualified voters do not have a wallet address set.");
+            // }
+            // System.out.println("- gasLimit: " + gasLimit);
+            // System.out.println("- gasPrice: " + gasPrice);
+
+            // 1) 取網路建議 gasPrice
+            // BigInteger networkGasPrice = web3j.ethGasPrice().send().getGasPrice();
+
+            // // 2) 構造 createBallot() 的 ABI 呼叫資料以估算 gasLimit
+            // Function fn = new Function(
+            //     "createBallot",
+            //     java.util.Arrays.asList(
+            //         new Uint256(BigInteger.valueOf(startTimeSeconds)),
+            //         new Uint256(BigInteger.valueOf(durationSeconds)),
+            //         new Uint256(BigInteger.valueOf(proposalCount)),
+            //         new DynamicArray<>(Address.class,
+            //             voterAddresses.stream().map(Address::new).toList())
+            //     ),
+            //     java.util.Collections.emptyList()
+            // );
+
+            // String data = FunctionEncoder.encode(fn);
+
+            // EthEstimateGas est = web3j.ethEstimateGas(
+            //     Transaction.createFunctionCallTransaction(
+            //         credentials.getAddress(), // from
+            //         null,                     // nonce（讓節點自算）
+            //         networkGasPrice,          // gasPrice（legacy）
+            //         null,                     // gasLimit（讓節點估）
+            //         contractAddress,          // to
+            //         BigInteger.ZERO,          // value
+            //         data                      // data
+            //     )
+            // ).send();
+
+            // BigInteger estimatedGasLimit = est.getAmountUsed();
+            // BigInteger estimatedFeeWei = networkGasPrice.multiply(estimatedGasLimit);
+
+            // // 3) 轉換為 ETH 方便閱讀
+            // java.math.BigDecimal feeEth = new java.math.BigDecimal(estimatedFeeWei)
+            //     .divide(new java.math.BigDecimal("1000000000000000000"), 8, java.math.RoundingMode.HALF_UP);
+
+            // // 4) 列印餘額與預估費用
+            // EthGetBalance bal = web3j.ethGetBalance(credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
+            // java.math.BigDecimal balanceEth = new java.math.BigDecimal(bal.getBalance())
+            //     .divide(new java.math.BigDecimal("1000000000000000000"), 8, java.math.RoundingMode.HALF_UP);
+
+            // System.out.println("From: " + credentials.getAddress());
+            // System.out.println("Balance: " + balanceEth + " ETH");
+            // System.out.println("Estimated gasLimit: " + estimatedGasLimit);
+            // System.out.println("Gas price: " + networkGasPrice + " wei");
+            // System.out.println("Estimated fee: " + feeEth + " ETH");
 
             // Calling createBallot() method and send
             TransactionReceipt receipt = contract.createBallot(
-                request.getTitle(), 
                 BigInteger.valueOf(startTimeSeconds), 
                 BigInteger.valueOf(durationSeconds),
-                proposalNames,
+                BigInteger.valueOf(proposalCount),
                 voterAddresses
             ).send();
 
@@ -224,15 +265,18 @@ public class BallotService {
             ballot.setBlockchainBallotId(blockchainBallotId);  // Return ballot ID on blockchain
 
             List<Voting.ProposalCreatedEventResponse> proposalEvents = contract.getProposalCreatedEvents(receipt);
-            if(proposalEvents.isEmpty() || proposalEvents.size() != request.getOptions().size()) {
-                throw new RuntimeException("Mismatch or no ProposalCreated events found");
+            List<Option> requestOptions = request.getOptions();
+
+            if(proposalEvents.isEmpty() || proposalEvents.size() != requestOptions.size()) {
+                throw new RuntimeException("Mismatch between number of options (" + requestOptions.size() + ") and proposal events found (" + proposalEvents.size() + ")");
             }
 
-            for (Voting.ProposalCreatedEventResponse event : proposalEvents) {
-                request.getOptions().stream()
-                    .filter(opt -> opt.getName().equals(event.name))
-                    .findFirst()
-                    .ifPresent(opt -> opt.setBlockchainOptionId(event.proposalId.longValue()));
+            for (int i = 0; i < proposalEvents.size(); i++) {
+                Voting.ProposalCreatedEventResponse event = proposalEvents.get(i);
+                Option correspondingOption = requestOptions.get(i);
+                
+                correspondingOption.setBlockchainOptionId(event.proposalId.longValue());
+                System.out.println("Pairing Option '" + correspondingOption.getName() + "' with blockchain ID: " + event.proposalId);
             }
 
             ballotRepository.save(ballot);
@@ -263,6 +307,10 @@ public class BallotService {
         Ballot ballot = ballotRepository.findById(ballotId)
                         .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
 
+        if(request.getTitle() != null) {
+            ballot.setTitle(request.getTitle());
+        }
+        
         if(request.getDescription() != null) {
             ballot.setDescription(request.getDescription());
         }
@@ -277,12 +325,6 @@ public class BallotService {
 
             BigInteger bcId = BigInteger.valueOf(ballot.getBlockchainBallotId());
             System.out.println("Attempting to update ballot on chain with blockchainBallotId: " + bcId);
-
-            if (request.getTitle() != null && !request.getTitle().isBlank()
-                && !request.getTitle().equals(ballot.getTitle())) {
-                contract.updateBallotTitle(bcId, request.getTitle()).send();
-                ballot.setTitle(request.getTitle());
-            }
 
             long chainNow = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
                 .send().getBlock().getTimestamp().longValue();

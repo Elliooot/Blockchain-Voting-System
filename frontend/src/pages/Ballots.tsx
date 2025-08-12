@@ -102,6 +102,7 @@ const TaskCard = ({
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
             {!isAdmin && ( <button className={buttonStyle + " flex-1 justify-center"} title="Vote" onClick={handleVote}>
               <VoteIcon fontSize="small" />

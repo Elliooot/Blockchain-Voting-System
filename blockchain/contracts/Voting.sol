@@ -9,12 +9,10 @@ contract Voting {
     }
     struct Proposal {
         uint256 index;
-        string name;
         uint256 voteCount;
     }
     struct Ballot {
         uint256 ballotId;
-        string title;
         uint256 startTime;
         uint256 duration;
         bool terminated;
@@ -30,8 +28,8 @@ contract Voting {
 
     uint256 public nextBallotId = 1;
 
-    event BallotCreated(uint256 ballotId, string title); // For Spring Boot to get the ballot ID
-    event ProposalCreated(uint256 ballotId, uint256 proposalId, string name); // For Spring Boot to get the proposal ID
+    event BallotCreated(uint256 ballotId); // For Spring Boot to get the ballot ID
+    event ProposalCreated(uint256 ballotId, uint256 proposalId); // For Spring Boot to get the proposal ID
     event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalId); // For Spring Boot to get the vote details
     event BallotResultFinalized(uint256 ballotId, uint256[] resultProposalIds); // For Spring Boot to get the final result
 
@@ -76,30 +74,28 @@ contract Voting {
         contractAdmin = msg.sender; 
     }
 
-    function createBallot(string memory _title, uint256 _startTime, uint256 _duration, string[] memory _proposalNames, address[] memory _voters) public onlyContractAdmin(){
+    function createBallot(uint256 _startTime, uint256 _duration, uint256 _proposalCount, address[] memory _voters) public onlyContractAdmin(){
         require(_startTime > block.timestamp, "Start time must be in the future");
-        require(_proposalNames.length > 1, "Must have at least two proposals");
+        require(_proposalCount > 1, "Must have at least two proposals");
         require(_voters.length > 0, "Must have at least one voter");
 
         uint256 ballotId = nextBallotId++;
 
         Ballot storage newBallot = ballots[ballotId];
         newBallot.ballotId = ballotId;
-        newBallot.title = _title;
         newBallot.startTime = _startTime;
         newBallot.duration = _duration;
         newBallot.terminated = false;
-        newBallot.resultProposalIds = new uint256[](_proposalNames.length);
+        newBallot.resultProposalIds = new uint256[](_proposalCount);
         newBallot.admin = msg.sender;
-        newBallot.proposalCount = _proposalNames.length;
+        newBallot.proposalCount = _proposalCount;
 
-        for(uint256 i = 0; i < _proposalNames.length; i++) {
+        for(uint256 i = 0; i < _proposalCount; i++) {
             proposalsByBallot[ballotId][i] = Proposal({
                 index: i,
-                name: _proposalNames[i],
                 voteCount: 0
             });
-            emit ProposalCreated(ballotId, i, _proposalNames[i]);
+            emit ProposalCreated(ballotId, i);
         }
 
         for(uint256 i = 0; i < _voters.length; i++) {
@@ -109,11 +105,7 @@ contract Voting {
             votersByBallot[ballotId][voterAddress].isRegistered = true;
         }
 
-        emit BallotCreated(ballotId, _title);
-    }
-
-    function updateBallotTitle(uint256 _ballotId, string memory _newTitle) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
-        ballots[_ballotId].title = _newTitle;
+        emit BallotCreated(ballotId);
     }
 
     function updateStartTime(uint256 _ballotId, uint256 _newStartTime) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
@@ -129,16 +121,12 @@ contract Voting {
         require(!votersByBallot[_ballotId][voter].isRegistered, "Voter is already registered");
 
         votersByBallot[_ballotId][voter].isRegistered = true;
-        votersByBallot[_ballotId][voter].hasVoted = false;
-        votersByBallot[_ballotId][voter].vote = 0;
     }
 
     function unregisterVoter(uint256 _ballotId, address voter) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
         require(votersByBallot[_ballotId][voter].isRegistered, "Voter is not registered");
 
         votersByBallot[_ballotId][voter].isRegistered = false;
-        votersByBallot[_ballotId][voter].hasVoted = false;
-        votersByBallot[_ballotId][voter].vote = 0;
     }
 
     function vote(uint256 _ballotId, uint256 _proposalId, address _voterAddress) public whenNotTerminated(_ballotId) onlyContractAdmin {

@@ -18,16 +18,6 @@ function Homepage() {
                     <nav>
                         <ul className="flex space-x-6 items-center">
                             <li>
-                                <a href="/" className="text-black text-xl hover:underline transition-all duration-200">
-                                    Home
-                                </a>
-                            </li>
-                            <li>
-                                <a href="/dashboard" className="text-black text-xl hover:underline transition-all duration-200">
-                                    Dashboard
-                                </a>
-                            </li>
-                            <li>
                                 <button onClick={() => navigate('/login')} className={primaryButtonStyles}>
                                     LogIn
                                 </button>
@@ -53,7 +43,15 @@ function Homepage() {
                     
                     <div className="flex justify-center gap-4 mb-16">
                         <button onClick={() => navigate('/register')} className={primaryButtonStyles}>Get Started</button>
-                        <button className={secondaryButtonStyles}>Learn More</button>
+                        <a
+                            href="https://github.com/Elliooot/Blockchain-Voting-System"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            >
+                            <button className={secondaryButtonStyles}>
+                                Learn More
+                            </button>
+                        </a>
                     </div>
 
                     <div className="mt-16 p-8 bg-gray-50 rounded-xl">
