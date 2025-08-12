@@ -5,7 +5,8 @@ import {
     PushPin as PushPinIcon,
     Note as NoteIcon,
     Delete as DeleteIcon,
-    HowToVote as VoteIcon
+    HowToVote as VoteIcon,
+    ZoomIn as ZoomInIcon,
 } from '@mui/icons-material';
 import { fetchBallots, deleteBallot } from '../api/apiService';
 import { useNavigate } from 'react-router-dom';
@@ -77,6 +78,10 @@ const TaskCard = ({
     navigate(`/dashboard/ballots/vote/${id}`);
   }
 
+  const handleCheck = () => {
+    navigate(`/dashboard/ballots/check/${id}`);
+  }
+
   const renderActions = () => {
     const isAdmin = userRole.includes('Admin');
     const buttonStyle = "bg-transparent border-none cursor-pointer p-1 rounded text-lg text-gray-500 hover:bg-gray-100";
@@ -87,6 +92,7 @@ const TaskCard = ({
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Edit" onClick={handleEdit}><EditIcon fontSize="small" /></button> )}
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
@@ -109,6 +115,7 @@ const TaskCard = ({
           <>
             <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
         );

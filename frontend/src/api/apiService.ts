@@ -15,7 +15,7 @@ apiClient.interceptors.request.use(
         console.log("📤 API Request - URL:", config.url);
         console.log("📤 API Request - Method:", config.method);
         
-        const token = localStorage.getItem('authToken');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         
         if(token) {
             config.headers.Authorization = `Bearer ${token}`;

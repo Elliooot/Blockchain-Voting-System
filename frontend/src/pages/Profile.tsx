@@ -99,7 +99,15 @@ function Profile() {
 
                         {/* Avatar */}
                         <div className="flex-shrink-0">
-                            <img className="rounded-full w-36 h-36 object-cover border-4 border-white shadow-sm" src="" alt="User avatar" />
+                            {user?.lastName ? (
+                                <div className="rounded-full w-36 h-36 flex items-center justify-center bg-gray-400 text-white text-6xl font-bold border-4 border-white shadow-sm">
+                                {user.firstName.charAt(0).toUpperCase()}
+                                </div>
+                            ) : (
+                                <div className="rounded-full w-36 h-36 flex items-center justify-center bg-gray-400 text-white text-6xl font-bold border-4 border-white shadow-sm">
+                                ?
+                                </div>
+                            )}
                         </div>
 
                     </div>

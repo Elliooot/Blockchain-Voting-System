@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from './contexts/AuthContext';
@@ -9,10 +9,27 @@ function Login() {
         password: ''
     });
 
+    const [rememberMe, setRememberMe] = useState(false);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
     const { login } = useAuth();
+
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        const savedRememberMe = localStorage.getItem('rememberMe');
+
+        if(savedEmail) {
+            setFormData(prev => ({
+                ...prev,
+                email: savedEmail
+            }));
+        }
+
+        if(savedRememberMe === 'true') {
+            setRememberMe(true);
+        }
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -21,9 +38,12 @@ function Login() {
         });
     };
 
+    const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setRememberMe(e.target.checked);
+    };
+
     const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-
         setError('');
 
         try {
@@ -33,10 +53,16 @@ function Login() {
             const token = response.data.token;
 
             if(token) { // response.status === 200
-                login(token);
+                console.log("Token: " + token);
+                if(rememberMe) {
+                    localStorage.setItem('rememberedEmail', formData.email);
+                    localStorage.setItem('rememberMe', 'true');
+                } else {
+                    localStorage.removeItem('rememberedEmail');
+                    localStorage.removeItem('rememberMe');
+                }
 
-                // Set the global header of axios, all subsequent requests will automatically carry the token
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+                login(token, rememberMe);
 
                 navigate('/dashboard');
             } else {
@@ -66,6 +92,7 @@ function Login() {
                             type='email' 
                             id='email' 
                             name='email' 
+                            value={formData.email}
                             required 
                             onChange={handleChange}
                             className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
@@ -77,6 +104,7 @@ function Login() {
                             type='password' 
                             id='password' 
                             name='password' 
+                            value={formData.password}
                             required 
                             onChange={handleChange}
                             className="w-full p-2.5 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 transition-colors text-gray-900"
@@ -88,6 +116,8 @@ function Login() {
                                 id='remember-me' 
                                 name='remember-me' 
                                 type='checkbox' 
+                                checked={rememberMe}
+                                onChange={handleRememberMeChange}
                                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" 
                             />
                             <label htmlFor='remember-me' className="ml-2 text-sm text-gray-600">Remember Me</label>

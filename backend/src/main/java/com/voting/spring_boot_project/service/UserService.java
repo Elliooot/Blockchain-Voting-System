@@ -5,7 +5,9 @@ import java.util.Map;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.voting.spring_boot_project.dto.UpdateWalletRequest;
 import com.voting.spring_boot_project.entity.User;
@@ -20,6 +22,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BallotRepository ballotRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public Map<String, String> getWalletAddress(){
         System.out.println("Get Wallet Address Method Called");
@@ -74,4 +77,25 @@ public class UserService {
         System.out.println("User account deleted: " + userEmail);
     }
     
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // authenticate current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+        
+        // new password cannot be the same as the old one
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new RuntimeException("New password must be different from current password");
+        }
+        
+        // update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        
+        System.out.println("Password changed successfully for user: " + email);
+    }
 }

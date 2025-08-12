@@ -6,7 +6,7 @@ function Setting() {
   const navigate = useNavigate();
 
   const handlePasswordChange = () => {
-    alert('Change Password button clicked!');
+    navigate("/dashboard/change-password");
   };
 
   const { deleteAccount } = useAuth();
