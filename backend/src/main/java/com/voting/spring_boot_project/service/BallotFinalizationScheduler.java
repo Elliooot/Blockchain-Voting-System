@@ -55,6 +55,14 @@ public class BallotFinalizationScheduler {
             BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
             ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
             Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
+
+            List<BigInteger> counts = contract.getVoteCounts(BigInteger.valueOf(blockchainBallotId)).send();
+            List<Option> options = optionRepository.findByBallot(ballot);
+
+            for(int i = 0; i < options.size(); i++) {
+                options.get(i).setVoteCount(counts.get(i).intValue());
+            }
+            optionRepository.saveAll(options);
             
             TransactionReceipt receipt = contract.finalizeResult(BigInteger.valueOf(blockchainBallotId)).send();
     

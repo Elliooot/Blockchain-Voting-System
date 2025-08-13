@@ -26,4 +26,5 @@ public class BallotResponse {
     private List<String> qualifiedVotersEmail;
     private List<Integer> qualifiedVotersId;
     private Status status;
+    private boolean hasVoted;
 }

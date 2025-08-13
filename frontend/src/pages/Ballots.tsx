@@ -26,6 +26,7 @@ interface ApiBallot {
   }>;
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
+  hasVoted: boolean;
 }
 
 interface BallotTask {
@@ -42,6 +43,7 @@ interface BallotTask {
   }>;
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
+  hasVoted: boolean;
   onDeleted?: () => void;
 }
 
@@ -51,10 +53,15 @@ const TaskCard = ({
   description, 
   options, 
   status, 
+  hasVoted,
   onDeleted, 
-  userRole
+  userRole,
+  isPinned,
+  onTogglePin
   }: Omit<BallotTask, 'startTime' | 'duration' | 'qualifiedVoterIds'> & {
     userRole: string;
+    isPinned: boolean;
+    onTogglePin: (id: number) => void;
   }) => {
 
   const navigate = useNavigate();
@@ -90,9 +97,11 @@ const TaskCard = ({
       case 'Pending':
         return (
           <>
-            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title={isPinned ? "Unpin" : "Pin"} onClick={() => onTogglePin(id)}>
+              <PushPinIcon fontSize="small" className={isPinned ? "text-blue-600 -rotate-12" : "text-gray-500"} />
+            </button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Detail" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Edit" onClick={handleEdit}><EditIcon fontSize="small" /></button> )}
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
           </>
@@ -100,24 +109,38 @@ const TaskCard = ({
       case 'Active':
         return (
           <>
-            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title={isPinned ? "Unpin" : "Pin"} onClick={() => onTogglePin(id)}>
+              <PushPinIcon fontSize="small" className={isPinned ? "text-blue-600 rotate-12" : "text-gray-500"} />
+            </button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Detail" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
-            {!isAdmin && ( <button className={buttonStyle + " flex-1 justify-center"} title="Vote" onClick={handleVote}>
+            {!isAdmin && !hasVoted && ( <button className={buttonStyle + " flex-1 justify-center"} title="Vote" onClick={handleVote}>
               <VoteIcon fontSize="small" />
               Vote
             </button>
+            )}
+            {!isAdmin && hasVoted && (
+              <div className="flex items-center justify-center flex-1 text-sm text-gray-500 font-semibold">
+                Voted
+              </div>
             )}
           </>
         );
       case 'Ended':
         return (
           <>
-            <button className={buttonStyle} title="Pin"><PushPinIcon fontSize="small" /></button>
+            <button className={buttonStyle} title={isPinned ? "Unpin" : "Pin"} onClick={() => onTogglePin(id)}>
+              <PushPinIcon fontSize="small" className={isPinned ? "text-blue-600 rotate-12" : "text-gray-500"} />
+            </button>
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
-            <button className={buttonStyle} title="Zoom In" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
+            <button className={buttonStyle} title="Detail" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
+            {!isAdmin && hasVoted && (
+              <div className="flex items-center justify-center flex-1 text-sm text-gray-500 font-semibold">
+                Voted
+              </div>
+            )}
           </>
         );
       default:
@@ -156,6 +179,31 @@ function Ballots() {
 
   const { user } = useAuth();
 
+  const [pinned, setPinned] = useState<Set<number>>(new Set());
+  const storageKey = user ? `ballotPins:${user.userId}` : null;
+
+  useEffect(() => {
+    if(!storageKey) { setPinned(new Set()); return; }
+    try {
+      const raw = localStorage.getItem(storageKey);
+      const arr = raw ? (JSON.parse(raw) as number[]) : [];
+      setPinned(new Set(arr));
+    } catch {
+      setPinned(new Set());
+    }
+  }, [storageKey]);
+
+  const togglePin = useCallback((id: number) => {
+    setPinned(prev => {
+      const next = new Set(prev);
+      if(next.has(id)) next.delete(id);
+      else next.add(id);
+      
+      if(storageKey) localStorage.setItem(storageKey, JSON.stringify([...next]));
+      return next;
+    });
+  }, [storageKey]);
+
   const loadBallots = useCallback(async () => {
     try {
         setIsLoading(true);
@@ -170,7 +218,8 @@ function Ballots() {
             duration: ballot.duration,
             options: ballot.options,
             status: ballot.status,
-            qualifiedVoterIds: ballot.qualifiedVoterIds
+            qualifiedVoterIds: ballot.qualifiedVoterIds,
+            hasVoted: ballot.hasVoted
         }));
 
         setTasks(formattedTasks);
@@ -224,6 +273,10 @@ function Ballots() {
                 
                 {tasks
                 .filter(task => task.status === columnStatus)
+                .sort((a, b) => {
+                  const ap = pinned.has(a.id), bp = pinned.has(b.id);
+                  return ap === bp ? 0 : (ap ? -1 : 1); // pinned first
+                })
                 .map(task => (
                     <TaskCard 
                       key={task.id}
@@ -233,7 +286,10 @@ function Ballots() {
                       status={task.status}
                       id={task.id}
                       onDeleted={loadBallots} 
-                      userRole={user?.role || ''}                    
+                      userRole={user?.role || ''}
+                      hasVoted={task.hasVoted}  
+                      isPinned={pinned.has(task.id)} 
+                      onTogglePin={togglePin}              
                     />
                 ))
                 }

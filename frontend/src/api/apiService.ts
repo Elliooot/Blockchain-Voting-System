@@ -129,6 +129,16 @@ export const castVote = async (voteData: object) => {
     }
 };
 
+export const getVoteRecords = async () => {
+    try {
+        const response = await apiClient.get('/voting/records');
+        console.log("Fetched vote records:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error fetching vote records: " + error);
+        throw error;
+    }
+};
 
 export const loadUserWallet = async () => {
     try {

@@ -2,7 +2,10 @@ package com.voting.spring_boot_project.service;
 
 import java.math.BigInteger;
 import java.util.Date;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -11,10 +14,13 @@ import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
+import org.web3j.tx.TransactionManager;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 
 import com.voting.spring_boot_project.contract.Voting;
+import com.voting.spring_boot_project.dto.BallotResponse;
+import com.voting.spring_boot_project.dto.VoteRecordResponse;
 import com.voting.spring_boot_project.dto.VoteRequest;
 import com.voting.spring_boot_project.dto.VoteResponse;
 import com.voting.spring_boot_project.entity.Option;
@@ -39,6 +45,10 @@ public class VotingService {
     @Value("${blockchain.contract.address}")
     private String contractAddress;
 
+    @Autowired
+    @Qualifier("web3jTransactionManager")
+    private TransactionManager txManager;
+
     @PreAuthorize("hasAuthority('Voter')")
     public VoteResponse castVote(VoteRequest request){ // Contract deployer calls the contract and acts as proxy to vote using its private key and voters address
 
@@ -60,7 +70,7 @@ public class VotingService {
             ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
 
             // Loading the deployed contract
-            Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
+            Voting contract = Voting.load(contractAddress, web3j, txManager, gasProvider);
 
             BigInteger blockchainBallotId = BigInteger.valueOf(selectedOption.getBallot().getBlockchainBallotId());
             BigInteger blockchainOptionId = BigInteger.valueOf(selectedOption.getBlockchainOptionId());
@@ -71,7 +81,8 @@ public class VotingService {
             // Calling vote() method and send
             TransactionReceipt receipt = contract.vote(blockchainBallotId, blockchainOptionId, voterWalletAddress).send();
 
-            System.out.println("Vote transaction successful. Hash: " + receipt.getTransactionHash());
+            String txHash = receipt.getTransactionHash();
+            System.out.println("Vote transaction successful. Hash: " + txHash);
 
             var newVote = Vote.builder()
                 .option(selectedOption)
@@ -94,5 +105,29 @@ public class VotingService {
             System.out.println("Failed to interact with smart contract: " + e.getMessage());
             throw new RuntimeException("Failed to cast vote on the blockchain");
         }
+    }
+
+    public List<VoteRecordResponse> getVoteRecordsForCurrentUser() {
+        System.out.println("🚀 getVoteRecordsForCurrentUser() method started");
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        User currentUser = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Vote> votesList = voteRepository.findByVoter(currentUser);
+
+        return votesList.stream()
+            .map(this::convertToVoteRecordResponse)
+            .toList();
+    }
+
+    private VoteRecordResponse convertToVoteRecordResponse(Vote vote) {
+        return VoteRecordResponse.builder()
+            .voteId(vote.getId())
+            .ballotId(vote.getBallot().getId())
+            .ballotTitle(vote.getBallot().getTitle())
+            .optionName(vote.getOption().getName())
+            .build();
     }
 }

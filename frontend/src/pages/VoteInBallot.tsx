@@ -19,8 +19,8 @@ interface ApiBallot {
         voteCount: number;
         displayOrder: number;
     }>;
-    startTime: string;
-    duration: string;
+    startTime: any;
+    duration: any;
 }
 
 function VoteInBallot() {
@@ -81,6 +81,68 @@ function VoteInBallot() {
         }
     }
 
+    function toDateFromApi(value?: any): Date | null {
+        if (value == null) return null;
+        if (typeof value === 'number') {
+            if (value >= 1e12) return new Date(value); // ms
+            if (value >= 1e9) return new Date(Math.floor(value / 1e6)); // µs/ns -> ms
+            return new Date(value * 1000); // seconds
+        }
+        if (typeof value === 'string') {
+            const s = value.trim();
+            if (/^\d+$/.test(s)) return toDateFromApi(Number(s));
+            const ms = Date.parse(s);
+            return isNaN(ms) ? null : new Date(ms);
+        }
+        if (typeof value === 'object' && 'epochSecond' in value) {
+            const sec = Number((value as any).epochSecond) || 0;
+            const nano = Number((value as any).nano) || 0;
+            return new Date(sec * 1000 + Math.floor(nano / 1e6));
+        }
+        return null;
+    }
+    
+    function formatStartTime(value?: any) {
+        const d = toDateFromApi(value);
+        return d ? d.toLocaleString() : "-";
+    }
+    
+    function toMillisFromDuration(value?: any): number {
+        if (value == null) return 0;
+        if (typeof value === 'number') {
+            if (value >= 1e12) return Math.floor(value / 1e6); // ns -> ms
+            if (value >= 1e8) return value; // ms
+            return value * 1000; // s -> ms
+        }
+        if (typeof value === 'string') {
+            const s = value.trim();
+            if (/^\d+$/.test(s)) return toMillisFromDuration(Number(s));
+            if (s.startsWith('P')) {
+                const m = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?)?$/.exec(s);
+                if (m) {
+                    const days = parseInt(m[1] || '0', 10);
+                    const hours = parseInt(m[2] || '0', 10);
+                    return (days * 24 + hours) * 60 * 60 * 1000;
+                }
+            }
+            return 0;
+        }
+        return 0;
+    }
+    
+    function formatDuration(value?: any) {
+        const milliseconds = toMillisFromDuration(value);
+        if (!milliseconds || milliseconds < 0) return "-";
+    
+        const totalHours = Math.floor(milliseconds / (1000 * 60 * 60));
+        const days = Math.floor(totalHours / 24);
+        const hours = totalHours % 24;
+    
+        if (days > 0 && hours > 0) return `${days} day ${hours} hr`;
+        if (days > 0) return `${days} day`;
+        return `${hours} hr`;
+    }    
+
     const TitleStyle = "text-left text-3xl font-bold text-gray-900 mb-2"
     const ContentStyle = "text-left text-base font-medium text-gray-500"
 
@@ -89,11 +151,13 @@ function VoteInBallot() {
             <div className="max-w-4xl mx-10">
                 <div className="mb-4">
                     <h3 className={TitleStyle} title="StartTime">Start Time</h3>
-                    <p className={ContentStyle}>{ballot?.startTime}</p>
+                    {/* <p className={ContentStyle}>{new Date(Number(ballot?.startTime) * 1000).toLocaleString()}</p> */}
+                    <p className={ContentStyle}>{formatStartTime(ballot?.startTime)}</p>
                 </div>
                 <div className="mb-4">
                     <h3 className={TitleStyle} title="Duration">Duration</h3>
-                    <p className={ContentStyle}>{ballot?.duration}</p>
+                    {/* <p className={ContentStyle}>{`${Number(ballot?.duration) / 3600} hours`}</p> */}
+                    <p className={ContentStyle}>{formatDuration(ballot?.duration)}</p>
                 </div>
                 <div className="mb-4">
                     <h1 className={TitleStyle} title="Title">Title</h1>

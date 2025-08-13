@@ -103,8 +103,10 @@ function Dashboard() {
     }
 
     const handleLogout = () => {
-        logout();
-        navigate('/');
+        navigate('/', { replace: true });
+        setTimeout(() => {
+            logout();
+        }, 0);
     }
 
     const currentNavItems = user?.role.includes('Admin') ? navigationItemsAdmin : navigationItemsVoter;

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { fetchBallotResult } from '../api/apiService';
 
 interface ApiResult {
-  id: number;
+  ballotId: number;
   title: string;
   description: string;
   startTime: string;
@@ -100,7 +100,7 @@ function Result() {
 
       // This tasks will be set to result, and result will later map the fetched data into ResultCard
       const formattedTasks = resultData.map(ballotDto => ({
-        id: ballotDto.id,
+        id: ballotDto.ballotId,
         title: ballotDto.title,
         description: ballotDto.description,
         startTime: ballotDto.startTime,
@@ -110,8 +110,6 @@ function Result() {
         totalVotes: ballotDto.totalVotes,
         result: ballotDto.resultOptionNames
       }));
-
-      console.log("Options check: ", formattedTasks[0].options);
       
       setResult(formattedTasks);
     } catch (error) {

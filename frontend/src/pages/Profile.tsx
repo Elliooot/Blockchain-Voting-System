@@ -1,10 +1,43 @@
+import { useEffect, useState } from "react";
+import { getVoteRecords } from "../api/apiService";
 import { useAuth } from "../contexts/AuthContext";
+
+interface apiVoteRecord {
+    voteId: number;
+    ballotId: number;
+    ballotTitle: string;
+    optionName: string;
+}
 
 function Profile() {
     const { user } = useAuth();
-    // console.log("Profile user:", user);
+    const [voteRecords, setVoteRecords] = useState<apiVoteRecord[]>([]);
+
     const dob = new Date(user?.dateOfBirth || 0);
     const formattedDob = dob.toISOString().slice(0, 10);
+
+    const loadVoteRecords = async () => {
+        try {
+            const recordData: apiVoteRecord[] = await getVoteRecords();
+            console.log("Fetched vote records:", recordData);
+            
+            const recordForm = recordData.map(vote => ({
+                voteId: vote.voteId,
+                ballotId: vote.ballotId,
+                ballotTitle: vote.ballotTitle,
+                optionName: vote.optionName
+            }));
+            
+            setVoteRecords(recordForm);
+        } catch (error) {
+            console.error("Failed to load vote records in component: ", error);
+            throw error;
+        }
+    };
+
+    useEffect(() => {
+        loadVoteRecords();
+    }, []);
 
     return (
         <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-8">
@@ -115,8 +148,63 @@ function Profile() {
                     <div className="border-t my-8"></div>
 
                     <div className="voting-record">
-                        <h3 className="text-xl font-bold text-gray-800">Voting Record</h3>
-                        {/* Voting Record */}
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-bold text-gray-800">Voting History</h3>
+                            <button 
+                                onClick={loadVoteRecords}
+                                className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center gap-1"
+                            >
+                                🔄 Refresh
+                            </button>
+                        </div>
+                        <div className="hidden md:block overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-300">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Ballot ID
+                                        </th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Election Title
+                                        </th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Your Choice
+                                        </th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {voteRecords.map((record: any, index: number) => (
+                                        <tr key={record.voteId} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                #{record.ballotId}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                {record.ballotTitle}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    {record.optionName}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    ✅ Voted
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="mt-6 text-center">
+                            <p className="text-sm text-gray-500">
+                                Total: {voteRecords.length} voting record{voteRecords.length !== 1 ? 's' : ''}
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>       

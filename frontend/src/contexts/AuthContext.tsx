@@ -123,7 +123,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(null)
 
         delete axios.defaults.headers.common['Authorization'];
-        window.location.href = '/login';
     };
 
     const deleteAccount = async () => {

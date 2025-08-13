@@ -21,3 +21,6 @@ application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
+
+demo:
+  ballot-ids: "102, 103, 104"

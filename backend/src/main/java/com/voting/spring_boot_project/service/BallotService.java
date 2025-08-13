@@ -2,6 +2,7 @@ package com.voting.spring_boot_project.service;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -9,24 +10,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.datatypes.Address;
-import org.web3j.abi.datatypes.DynamicArray;
-import org.web3j.abi.datatypes.Function;
-import org.web3j.abi.datatypes.Utf8String;
-import org.web3j.abi.datatypes.generated.Uint256;
+import org.springframework.transaction.annotation.Transactional;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.Transaction;
-import org.web3j.protocol.core.methods.response.EthEstimateGas;
-import org.web3j.protocol.core.methods.response.EthGetBalance;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
@@ -63,6 +55,9 @@ public class BallotService {
     @Value("${blockchain.contract.address}")
     private String contractAddress;
 
+    @Value("${demo.ballot-ids:}")
+    private String demoBallotIdsCsv;
+
     public List<BallotResponse> getBallotsForCurrentUser() {
         System.out.println("🚀 getBallotsForCurrentUser() method started");
         
@@ -87,10 +82,10 @@ public class BallotService {
             ballots = ballotRepository.findByAdmin(currentUser);
         } else if (currentUser.getRole() == Role.Voter) {
             System.out.println("🗳️ Fetching ballots for Voter");
-            ballots = ballotRepository.findBallotsForVoter(currentUser)
-                .stream()
-                .filter(b -> !voteRepository.existsByBallotAndVoter(b, currentUser))
-                .collect(Collectors.toList());
+            ballots = ballotRepository.findBallotsForVoter(currentUser);
+                // .stream()
+                // .filter(b -> !voteRepository.existsByBallotAndVoter(b, currentUser))
+                // .collect(Collectors.toList());
         } else {
             System.out.println("❓ Unknown role, returning empty list");
             ballots = new ArrayList<>();
@@ -101,7 +96,15 @@ public class BallotService {
         System.out.println("📊 Found " + updatedBallots.size() + " ballots");
         
         return updatedBallots.stream()
-                .map(this::convertToBallotResponse)
+                .map(ballot -> {
+                    BallotResponse response = convertToBallotResponse(ballot);
+
+                    if(currentUser.getRole() == Role.Voter) {
+                        response.setHasVoted(voteRepository.existsByBallotAndVoter(ballot, currentUser));
+                    }
+
+                    return response;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -188,8 +191,8 @@ public class BallotService {
 
             // System.out.println("Calling createBallot with:");
             // System.out.println("- title: " + request.getTitle());
-            System.out.println("Start Time (Epoch Seconds): " + BigInteger.valueOf(startTimeSeconds));
-            // System.out.println("Current Time (Epoch Seconds): " + System.currentTimeMillis() / 1000);
+            System.out.println("- Start Time (Epoch Seconds): " + BigInteger.valueOf(startTimeSeconds));
+            System.out.println("- Current Time (Epoch Seconds): " + System.currentTimeMillis() / 1000);
             System.out.println("- durationSeconds: " + BigInteger.valueOf(durationSeconds));
             // System.out.println("Voter Addresses Count: " + voterAddresses.size());
             System.out.println("Voter Addresses: " + voterAddresses);
@@ -454,28 +457,6 @@ public class BallotService {
                 .build();
     }
 
-    // public List<String> getResultFromBlockchain(Long blockchainBallotId) {
-    //     try {
-    //         ContractGasProvider gasProvider = new DefaultGasProvider();
-
-    //         Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
-
-    //         List<BigInteger> resultIds = contract.getResult(BigInteger.valueOf(blockchainBallotId)).send();
-
-    //         Ballot ballot = ballotRepository.findByBlockchainBallotId(blockchainBallotId).orElse(null);
-
-    //         List<String> resultNames = resultIds.stream()
-    //             .map(id -> optionRepository.findByBallotAndBlockchainOptionId(ballot, id.longValue())
-    //                 .map(Option::getName)
-    //                 .orElse("Unknown"))
-    //             .toList();
-
-    //         return resultNames;
-    //     } catch (Exception e) {
-    //         throw new RuntimeException("Failed to get result from blockchain: " + e.getMessage(), e);
-    //     }
-    // }
-
     public List<ResultResponse> getResultForCurrentUser() {
         System.out.println("🚀 getResultForCurrentUser() method started");
 
@@ -486,9 +467,26 @@ public class BallotService {
 
         List<Ballot> ballots = ballotRepository.findVotedAndEndedBallots(currentUser, Status.Ended);
 
+        List<Ballot> all = new ArrayList<>(ballots);
+        if(demoBallotIdsCsv != null && !demoBallotIdsCsv.isBlank()) {
+            List<Integer> demoIds = Arrays.stream(demoBallotIdsCsv.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Integer::valueOf)
+                    .collect(Collectors.toList());
+
+            List<Ballot> demoBallots = ballotRepository.findAllById(demoIds);
+            Set<Integer> existingIds = all.stream().map(Ballot::getId).collect(Collectors.toSet());
+            for (Ballot b: demoBallots) {
+                if (!existingIds.contains(b.getId())) {
+                    all.add(b);
+                }
+            }
+        }
+
         System.out.println("Found " + ballots.size() + " ballots");
 
-        return ballots.stream()
+        return all.stream()
                 .map(this::convertToResultResponse)
                 .collect(Collectors.toList());
     }

@@ -1,11 +1,15 @@
 package com.voting.spring_boot_project.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.voting.spring_boot_project.dto.VoteRecordResponse;
 import com.voting.spring_boot_project.dto.VoteRequest;
 import com.voting.spring_boot_project.dto.VoteResponse;
 import com.voting.spring_boot_project.service.VotingService;
@@ -23,5 +27,10 @@ public class VotingController {
         @RequestBody VoteRequest request
     ) {
         return ResponseEntity.ok(votingService.castVote(request));
+    }
+
+    @GetMapping("/records")
+    public ResponseEntity<List<VoteRecordResponse>> getVoteRecordsForCurrentUser() {
+        return ResponseEntity.ok(votingService.getVoteRecordsForCurrentUser());
     }
 }

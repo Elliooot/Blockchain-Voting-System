@@ -65,9 +65,6 @@ public class Ballot {
     @OneToMany(mappedBy = "ballot", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options = new ArrayList<>();
 
-    // @Column(name = "contract_address", nullable = false, length = 255, unique = true)
-    private String contractAddress;
-
     @ElementCollection
     @Column(name = "result_option_ids")
     private List<Integer> resultOptionIds = new ArrayList<>();
