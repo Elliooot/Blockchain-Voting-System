@@ -56,14 +56,22 @@ function Wallet() {
             console.log("Connected to account: ", newAccounts[0]);
 
             if(newAddress){
-                await updateWalletAddress(newAddress);
+                console.log("📤 Calling updateWalletAddress with:", newAddress);
+                const updateResponse = await updateWalletAddress(newAddress);
+                console.log("📥 updateWalletAddress response:", updateResponse);
+                
                 setSavedWalletAddress(newAddress);
-                console.log("Wallet address saved: " + newAddress);
+                console.log("✅ Wallet address saved: " + newAddress);
             }
         } catch (error: any) {
-            console.error("Connection failed:", error);
+            console.error("❌ Full error object:", error);
+            console.error("❌ Error response:", error.response?.data);
+            console.error("❌ Error status:", error.response?.status);
+            
             if (error.code === 4001) {
                 setError("Connection rejected by user.");
+            } else if (error.response) {
+                setError(`Server error: ${error.response.data.message || error.response.statusText}`);
             } else {
                 setError("Failed to connect wallet. Please try again.");
             }

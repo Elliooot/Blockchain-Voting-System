@@ -17,7 +17,7 @@ import com.voting.spring_boot_project.service.VotingService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/voting")
+@RequestMapping("/api/v1/voting")
 @RequiredArgsConstructor
 public class VotingController {
     private final VotingService votingService;

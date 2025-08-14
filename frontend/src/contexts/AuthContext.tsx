@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
-import axios from 'axios';
+import axiosInstance from '../api/axiosConfig';
 
 interface User {
     sub: string;
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     if (decodedUser.exp * 1000 > Date.now()) {
                         setUser(decodedUser);
                         setToken(persistentToken);
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${persistentToken}`;
+                        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${persistentToken}`;
                         return;
                     } else {
                         localStorage.removeItem('token');
@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     if (decodedUser.exp * 1000 > Date.now()) {
                         setUser(decodedUser);
                         setToken(sessionToken);
-                        axios.defaults.headers.common['Authorization'] = `Bearer ${sessionToken}`;
+                        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${sessionToken}`;
                         return;
                     } else {
                         sessionStorage.removeItem('token');
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
             setToken(null);
             setUser(null);
-            delete axios.defaults.headers.common['Authorization'];
+            delete axiosInstance.defaults.headers.common['Authorization'];
         };
 
         initializeAuth();
@@ -106,7 +106,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setToken(token);
 
             // Set the global header of axios, all subsequent requests will automatically carry the token
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             console.log("Token:", token);
             console.log("Decoded User:", decodedUser);
@@ -122,13 +122,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setToken(null);
         setUser(null)
 
-        delete axios.defaults.headers.common['Authorization'];
+        delete axiosInstance.defaults.headers.common['Authorization'];
     };
 
     const deleteAccount = async () => {
         try {
             if(token) {
-                await axios.delete('http://localhost:8080/api/user/delete', {
+                await axiosInstance.delete('/user/delete', {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'

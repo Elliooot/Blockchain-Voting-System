@@ -2,9 +2,14 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: spring-boot-project
+  threads:
+    virtual:
+      enabled: true
   datasource:
-    url: jdbc:postgresql://localhost:5332/postgres
-    username: ${POSTGRES_USER}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5332/postgres} # For local development
+    username: ${POSTGRES_USER} # Will be read from local environment variables
     password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
@@ -22,5 +27,15 @@ application:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
 
+blockchain:
+  node:
+    url: https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}
+  contract:
+    address: ${SEPOLIA_CONTRACT_ADDRESS}
+  private:
+    key: ${PRIVATE_KEY}
+  network:
+    chainId: 11155111
+
 demo:
-  ballot-ids: "102, 103, 104"
+  ballot-ids: ${DEMO_BALLOT_IDS:102,103,104}

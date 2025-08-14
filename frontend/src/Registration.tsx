@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from './api/axiosConfig';
 
 function Registration() {
     const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ function Registration() {
 
         try {
             const { confirmPassword, ...requestData } = formData;
-            const response = await axios.post('http://localhost:8080/api/v1/auth/register', requestData);
+            const response = await axiosInstance.post('/auth/register', requestData);
 
             if(response.status === 201 || response.status === 200) {
                 navigate('/login');
@@ -44,8 +44,8 @@ function Registration() {
                 setError(errorText);
                 console.error(errorText);
             }
-        } catch(err) {
-            if(axios.isAxiosError(err) && err.response){
+        } catch(err: any) {
+            if(err.response){
                 setError(err.response.data.message || err.response.data);
             } else {
                 setError('An error occurred during user registration');

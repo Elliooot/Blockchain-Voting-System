@@ -1,6 +1,7 @@
 package com.voting.spring_boot_project.service;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.security.core.Authentication;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.voting.spring_boot_project.dto.UpdateWalletRequest;
+import com.voting.spring_boot_project.entity.Ballot;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
@@ -40,36 +42,49 @@ public class UserService {
     public Map<String, String> updateWalletAddress(UpdateWalletRequest request){
         System.out.println("Update Wallet Address Method Called");
 
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String userEmail = auth.getName();
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            User user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
 
-        System.out.println("User's current wallet address: " + user.getWalletAddress());
+            System.out.println("User's current wallet address: " + user.getWalletAddress());
+            System.out.println("Request wallet address: " + request.getWalletAddress());
 
-        System.out.println("Updating wallet address...");
-        
-        if(request.getWalletAddress() == null || request.getWalletAddress().isEmpty()){
-            System.out.println("Disconnect Wallet Address");
-            user.setWalletAddress(null);
-        } else {
-            System.out.println("Update Wallet Address");
-            System.out.println("New wallet address: " + request.getWalletAddress());
-            user.setWalletAddress(request.getWalletAddress());
+            if(request.getWalletAddress() == null || request.getWalletAddress().isEmpty()){
+                System.out.println("Disconnect Wallet Address");
+                user.setWalletAddress(null);
+            } else {
+                System.out.println("Update Wallet Address");
+                System.out.println("New wallet address: " + request.getWalletAddress());
+                user.setWalletAddress(request.getWalletAddress());
+            }
+
+            User savedUser = userRepository.save(user);
+            System.out.println("✅ User saved successfully. New wallet address: " + savedUser.getWalletAddress());
+            
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Wallet address updated successfully");
+            response.put("walletAddress", savedUser.getWalletAddress());
+
+            return response;
+            
+        } catch (Exception e) {
+            System.out.println("❌ Error updating wallet address: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-
-        userRepository.save(user);
-        
-        Map<String, String> response = new HashMap<>();
-        response.put("message", "Wallet address updated successfully");
-        response.put("walletAddress", request.getWalletAddress());
-
-        return response;
     }
 
     public void deleteAccount(String userEmail) {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Ballot> ballots = ballotRepository.findAll();
+        for (Ballot ballot : ballots) {
+            ballot.getQualifiedVoters().removeIf(u -> u.getId().equals(user.getId()));
+            ballotRepository.save(ballot);
+        }
 
         ballotRepository.deleteAll(ballotRepository.findByAdmin(user)); // If admin account, delete all ballots
         userRepository.delete(user); // Delete user in repo

@@ -3,10 +3,8 @@ package com.voting.spring_boot_project.controller;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -27,16 +25,13 @@ import com.voting.spring_boot_project.repository.UserRepository;
 import com.voting.spring_boot_project.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-import okhttp3.Response;
 
 @RestController
-@RequestMapping("/api/user")
+@RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
 public class UserController {
     
-    @Autowired
     private final UserRepository userRepository;
-
     private final UserService userService;
 
     @GetMapping("/search")

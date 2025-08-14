@@ -24,7 +24,7 @@ import com.voting.spring_boot_project.service.BallotService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/ballots")
+@RequestMapping("/api/v1/ballots")
 @RequiredArgsConstructor
 public class BallotController {
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from './api/axiosConfig';
 import { useAuth } from './contexts/AuthContext';
 
 function Login() {
@@ -47,13 +47,15 @@ function Login() {
         setError('');
 
         try {
-            const response = await axios.post('http://localhost:8080/api/v1/auth/authenticate', formData);
-            console.log(response);
+            const response = await axiosInstance.post('/auth/authenticate', formData);
+            console.log("Login response: " + response.data);
 
             const token = response.data.token;
 
+            console.log("Token: " + token);
+
             if(token) { // response.status === 200
-                console.log("Token: " + token);
+                // console.log("Token: " + token);
                 if(rememberMe) {
                     localStorage.setItem('rememberedEmail', formData.email);
                     localStorage.setItem('rememberMe', 'true');
@@ -63,17 +65,17 @@ function Login() {
                 }
 
                 login(token, rememberMe);
+                console.log("✅ Token saved to localStorage");
 
                 navigate('/dashboard');
             } else {
                 setError('Login successful, but no authentication token was received.');
             }
-        } catch(err) {
-            // Handle all error (Network issue, status 4xx or 5xx)
-            if(axios.isAxiosError(err) && err.response) {
-                setError(err.response.data.message || 'Email or password is incorrect');
+        } catch(err: any) {
+            if(err.response){
+                setError(err.response.data.message || err.response.data);
             } else {
-                setError('EA network error occurred. Please try again.');
+                setError('An error occurred during user registration');
             }
         }
     }

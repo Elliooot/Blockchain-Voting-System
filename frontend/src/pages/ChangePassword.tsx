@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from '../api/axiosConfig';
 
 function ChangePassword() {
     const [formData, setFormData] = useState({
@@ -46,7 +46,7 @@ function ChangePassword() {
         setMessage('');
 
         try {
-            await axios.post('http://localhost:8080/api/user/change-password', {
+            await axiosInstance.post('/user/change-password', {
                 currentPassword: formData.currentPassword,
                 newPassword: formData.newPassword
             }, {
@@ -64,7 +64,7 @@ function ChangePassword() {
             }, 2000);
             
         } catch (error: any) {
-            if (axios.isAxiosError(error) && error.response) {
+            if (error.response) {
                 setError(error.response.data.message || 'Failed to change password');
             } else {
                 setError('Network error. Please try again.');

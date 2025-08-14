@@ -74,15 +74,16 @@ const navigationItemsVoter = [
     { text: 'Wallet', icon: <WalletIcon />, path: '/dashboard/wallet' },
     { text: 'Profile', icon: <AccountBoxIcon />, path: '/dashboard/profile' },
     { text: 'Setting', icon: <SettingsIcon />, path: '/dashboard/setting'},
+    { text: 'FAQs', icon: <VotersIcon />, path: '/dashboard/FAQs' },
 ]
 
 const navigationItemsAdmin = [
     { text: 'Overview', icon: <DashboardIcon />, path: '/dashboard/overview' },
     { text: 'Ballots', icon: <HowToVoteIcon />, path: '/dashboard/ballots' },
-    { text: 'Voters', icon: <VotersIcon />, path: '/dashboard/voters' },
     { text: 'Wallet', icon: <WalletIcon />, path: '/dashboard/wallet' },
     { text: 'Profile', icon: <AccountBoxIcon />, path: '/dashboard/profile' },
     { text: 'Setting', icon: <SettingsIcon />, path: '/dashboard/setting'},
+    { text: 'FAQs', icon: <VotersIcon />, path: '/dashboard/FAQs' },
 ]
 
 const theme = createTheme({

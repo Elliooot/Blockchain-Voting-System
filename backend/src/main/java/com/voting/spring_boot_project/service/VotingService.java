@@ -19,7 +19,6 @@ import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.tx.gas.StaticGasProvider;
 
 import com.voting.spring_boot_project.contract.Voting;
-import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.VoteRecordResponse;
 import com.voting.spring_boot_project.dto.VoteRequest;
 import com.voting.spring_boot_project.dto.VoteResponse;

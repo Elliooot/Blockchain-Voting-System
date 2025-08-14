@@ -17,6 +17,7 @@ import VoteInBallot from './pages/VoteInBallot'
 import EditBallot from './pages/EditBallot'
 import ChangePassword from './pages/ChangePassword'
 import CheckBallot from './pages/CheckBallot'
+import FAQ from './pages/FAQ'
 
 function App() {
   return (
@@ -40,7 +41,7 @@ function App() {
             <Route path="/dashboard/ballots/vote/:ballotId" element={<VoteInBallot />} />
             <Route path="/dashboard/ballots/edit/:ballotId" element={<EditBallot />} />
             <Route path="/dashboard/ballots/check/:ballotId" element={<CheckBallot />} />
-            <Route path='/dashboard/voters' element={<Voters />} />
+            <Route path='/dashboard/FAQs' element={<FAQ />} />
           </Route>
         </Route>
       </Routes>

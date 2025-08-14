@@ -1,11 +1,14 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
+const baseURL = "/api/v1";
+  
+console.log("🔍 API Base URL:", import.meta.env.VITE_API_BASE_URL);
+console.log("🔍 Environment variables:", import.meta.env);
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: baseURL,
-    timeout: 10000,
+    timeout: 60000,
     headers: {
         'Content-Type': 'application/json',
     }
@@ -29,7 +32,7 @@ axiosInstance.interceptors.request.use(
 // Response interceptor
 axiosInstance.interceptors.response.use(
     (response: AxiosResponse) => {
-        return response.data;
+        return response;
     },
     (error: AxiosError) => {
         return Promise.reject(error);

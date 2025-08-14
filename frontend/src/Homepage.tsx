@@ -14,7 +14,7 @@ function Homepage() {
             {/* Header Section */}
             <header className="bg-white sticky top-0 z-50 px-5 py-5 shadow-sm">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-4xl font-bold font-['Courier_New',Courier,monospace] text-black">Voting</h1>
+                    <h1 className="text-4xl font-bold font-['Courier_New',Courier,monospace] text-black">Hase</h1>
                     <nav>
                         <ul className="flex space-x-6 items-center">
                             <li>

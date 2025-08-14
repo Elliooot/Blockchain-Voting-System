@@ -1,16 +1,6 @@
-import axios from 'axios';
+import axiosInstance from "./axiosConfig";
 
-const baseURL = "http://localhost:8080/api";
-
-const apiClient = axios.create({
-    baseURL: baseURL,
-    timeout: 60000,
-    headers: {
-        'Content-Type': 'application/json',
-    }
-});
-
-apiClient.interceptors.request.use(
+axiosInstance.interceptors.request.use(
     (config) => {
         console.log("📤 API Request - URL:", config.url);
         console.log("📤 API Request - Method:", config.method);
@@ -32,7 +22,7 @@ apiClient.interceptors.request.use(
     }
 );
 
-apiClient.interceptors.response.use(
+axiosInstance.interceptors.response.use(
     (response) => {
         console.log("✅ API Response - Status:", response.status);
         console.log("📥 API Response - Data:", response.data);
@@ -45,7 +35,7 @@ apiClient.interceptors.response.use(
 
 export const createBallot = async (ballotData: object) => {
     try {
-        const response = await apiClient.post('/ballots/create', ballotData);
+        const response = await axiosInstance.post('/ballots/create', ballotData);
         return response.data;
     } catch (error) {
         console.error("Failed to create ballot in apiService:", error);
@@ -55,7 +45,7 @@ export const createBallot = async (ballotData: object) => {
 
 export const editBallot = async (ballotId: number, ballotData: object) => {
     try {
-        const response = await apiClient.patch(`/ballots/update/${ballotId}`, ballotData);
+        const response = await axiosInstance.patch(`/ballots/update/${ballotId}`, ballotData);
         return response.data;
     } catch (error) {
         console.error("Failed to edit ballot in apiService:", error);
@@ -65,7 +55,7 @@ export const editBallot = async (ballotId: number, ballotData: object) => {
 
 export const fetchBallots = async () => {
     try {
-        const response = await apiClient.get('/ballots');
+        const response = await axiosInstance.get('/ballots');
         console.log("Fetched ballots:", response.data);
         return response.data;
     } catch (error) {
@@ -76,7 +66,7 @@ export const fetchBallots = async () => {
 
 export const fetchBallotById = async (ballotId: number) => {
     try {
-        const response = await apiClient.get(`/ballots/${ballotId}`);
+        const response = await axiosInstance.get(`/ballots/${ballotId}`);
         console.log("Fetched ballot: " + ballotId);
         return response.data;
     } catch (error) {
@@ -87,7 +77,7 @@ export const fetchBallotById = async (ballotId: number) => {
 
 export const fetchBallotResult = async () => {
     try {
-        const reponse = await apiClient.get('/ballots/result');
+        const reponse = await axiosInstance.get('/ballots/result');
         console.log("Fetched ballot result: " + reponse.data);
         return reponse.data;
     } catch (error) {
@@ -98,7 +88,7 @@ export const fetchBallotResult = async () => {
 
 export const deleteBallot = async (ballotId: number) => {
     try {
-        const response = await apiClient.delete('ballots/delete/' + ballotId);
+        const response = await axiosInstance.delete('ballots/delete/' + ballotId);
         console.log("Deleted ballot:", response.data);
         return response.data;
     } catch (error) {
@@ -109,7 +99,7 @@ export const deleteBallot = async (ballotId: number) => {
 
 export const searchVoterByEmail = async (email: string) => {
     try {
-        const response = await apiClient.get('/user/search?email=' + email);
+        const response = await axiosInstance.get('/user/search?email=' + email);
         console.log("Fetched voters:", response.data);
         return response.data;
     } catch (error) {
@@ -120,7 +110,7 @@ export const searchVoterByEmail = async (email: string) => {
 
 export const castVote = async (voteData: object) => {
     try {
-        const response = await apiClient.post('/voting/vote', voteData);
+        const response = await axiosInstance.post('/voting/vote', voteData);
         console.log("Cast vote response:", response.data);
         return response.data;
     } catch (error) {
@@ -131,7 +121,7 @@ export const castVote = async (voteData: object) => {
 
 export const getVoteRecords = async () => {
     try {
-        const response = await apiClient.get('/voting/records');
+        const response = await axiosInstance.get('/voting/records');
         console.log("Fetched vote records:", response.data);
         return response.data;
     } catch (error) {
@@ -142,7 +132,7 @@ export const getVoteRecords = async () => {
 
 export const loadUserWallet = async () => {
     try {
-        const response = await apiClient.get('/user/get_wallet');
+        const response = await axiosInstance.get('/user/get_wallet');
         console.log("Loaded wallet address:", response.data);
         return response.data.walletAddress;
     } catch (error) {
@@ -153,11 +143,12 @@ export const loadUserWallet = async () => {
 
 export const updateWalletAddress = async (walletAddress: string) => {
     try {
-        const response = await apiClient.put('/user/update_wallet', { walletAddress });
-        console.log("Updated wallet address:", response.data);
+        console.log("📤 API: Updating wallet with address:", walletAddress);
+        const response = await axiosInstance.put('/user/update_wallet', { walletAddress });
+        console.log("📥 API: Update wallet response:", response.data);
         return response.data;
     } catch (error) {
-        console.error("Error updating wallet address: " + error);
+        console.error("❌ API: Error updating wallet address:", error);
         throw error;
     }
 }

@@ -1,0 +1,58 @@
+services:
+  react-project:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile
+      ports:
+        - "3000:80"
+      env_file:
+        - ./frontend/.env
+      depends_on:
+        - spring-boot-project
+      networks:
+        - app
+
+  spring-boot-project:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # ports:
+      # - "8080:8080"
+    env_file:
+      - ./backend/.env
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - DEMO_BALLOT_IDS=102,103,104
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app
+      - db
+
+  db:
+    image: postgres:14
+    env_file:
+      - ./backend/.env
+    volumes:
+      - db:/var/lib/postgresql/data
+    ports:
+      - "5332:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U william -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - db
+
+networks:
+  app:
+    driver: bridge
+  db:
+    driver: bridge
+
+volumes:
+  db:

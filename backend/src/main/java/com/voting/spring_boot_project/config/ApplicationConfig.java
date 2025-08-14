@@ -27,7 +27,7 @@ public class ApplicationConfig {
         return username -> {
             System.out.println("🔍 UserDetailsService - Looking for user: '" + username + "'");
             
-            User user = userRepository.findByEmail(username)
+            User user = userRepository.findByEmail(username.toLowerCase())
                     .orElseThrow(() -> {
                         System.out.println("❌ UserDetailsService - User not found: '" + username + "'");
                         return new UsernameNotFoundException("User not found");

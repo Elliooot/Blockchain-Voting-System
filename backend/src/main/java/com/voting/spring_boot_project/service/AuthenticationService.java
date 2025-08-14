@@ -39,7 +39,7 @@ public class AuthenticationService {
         var user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .email(request.getEmail())
+                .email(request.getEmail().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .dateOfBirth(request.getDateOfBirth())
                 .gender(request.getGender())
@@ -63,7 +63,7 @@ public class AuthenticationService {
                 request.getPassword()
             )
         );
-        var user = userRepository.findByEmail(request.getEmail())
+        var user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow();
         
         System.out.println("🔵 [AuthService] Generating JWT token...");
