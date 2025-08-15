@@ -15,6 +15,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
@@ -32,7 +33,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "\"ballot\"")
+@Table(name = "ballot", indexes = {
+    @Index(name = "idx_ballot_admin_id", columnList = "admin_id"),
+    @Index(name = "idx_ballot_blockchain_id", columnList = "blockchainBallotId"),
+    @Index(name = "idx_ballot_status", columnList = "status"),
+})
 public class Ballot {
     @Id
     @GeneratedValue

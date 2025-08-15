@@ -12,9 +12,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.voting.spring_boot_project.dto.UpdateWalletRequest;
 import com.voting.spring_boot_project.entity.Ballot;
+import com.voting.spring_boot_project.entity.Role;
 import com.voting.spring_boot_project.entity.User;
+import com.voting.spring_boot_project.entity.Vote;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
+import com.voting.spring_boot_project.repository.VoteRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +27,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BallotRepository ballotRepository;
+    private final VoteRepository voteRepository;
     private final PasswordEncoder passwordEncoder;
 
     public Map<String, String> getWalletAddress(){
@@ -80,13 +84,23 @@ public class UserService {
         User user = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        if(user.getRole() == Role.ElectoralAdmin){
+            ballotRepository.deleteAll(ballotRepository.findByAdmin(user)); // If admin account, delete all ballots
+        }
+
         List<Ballot> ballots = ballotRepository.findAll();
-        for (Ballot ballot : ballots) {
+        for (Ballot ballot : ballots) { // delete from all qualified ballots list
             ballot.getQualifiedVoters().removeIf(u -> u.getId().equals(user.getId()));
             ballotRepository.save(ballot);
         }
 
-        ballotRepository.deleteAll(ballotRepository.findByAdmin(user)); // If admin account, delete all ballots
+        List<Vote> votes = voteRepository.findAll();
+        for (Vote vote : votes) {
+            if (vote.getVoter().getId().equals(user.getId())) {
+                voteRepository.delete(vote);
+            }
+        }
+
         userRepository.delete(user); // Delete user in repo
 
         System.out.println("User account deleted: " + userEmail);

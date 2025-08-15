@@ -13,6 +13,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Table;
@@ -26,7 +27,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "\"user\"")
+@Table(name = "\"user\"", indexes = {
+    @Index(name = "idx_user_email", columnList = "email", unique = true)
+})
 public class User implements UserDetails{
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -34,6 +37,8 @@ public class User implements UserDetails{
     private Integer id;
     private String firstName;
     private String lastName;
+
+    @Column(nullable = false, unique = true)
     private String email;
     private String password;
     private Date dateOfBirth;

@@ -5,6 +5,7 @@ import java.util.Date;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -18,7 +19,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "vote")
+@Table(name = "vote", indexes = {
+    @Index(name = "idx_vote_ballot_id", columnList = "ballot_id"),
+    @Index(name = "idx_vote_user_id", columnList = "user_id"),
+    @Index(name = "idx_vote_option_id", columnList = "option_id"),
+})
 public class Vote {
     @Id
     @GeneratedValue
