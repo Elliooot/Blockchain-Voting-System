@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import GradientText from './blocks/TextAnimations/GradientText/GradientText';
+import GradientText from '../blocks/TextAnimations/GradientText/GradientText';
 
 function Homepage() {
     const navigate = useNavigate();

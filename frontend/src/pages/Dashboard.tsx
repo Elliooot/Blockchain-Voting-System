@@ -16,7 +16,7 @@ import { createTheme } from '@mui/material';
 
 import { Outlet, Link, useNavigate } from 'react-router-dom';
 import type { CSSObject } from '@emotion/react';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const drawerWidth = 240;
 
