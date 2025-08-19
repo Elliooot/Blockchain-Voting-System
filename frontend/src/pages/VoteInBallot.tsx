@@ -41,10 +41,18 @@ function VoteInBallot() {
             return;
         }
         try {
-            const ballotData: ApiBallot = await fetchBallotById(parseInt(ballotId));
-            
+            const ballotData: ApiBallot | null = await fetchBallotById(parseInt(ballotId));
+            if (!ballotData) {
+                // Gracefully handle not found
+                setBallot(null);
+                return;
+            }
             setBallot(ballotData);
-            setFormData(prev => ({...prev, ballotId: ballotData.id }));
+            // Ensure we set the correct blockchainBallotId used by the API
+            setFormData(prev => ({
+                ...prev,
+                blockchainBallotId: ballotData.blockchainBallotId ?? ballotData.id,
+            }));
         } catch (error) {
             console.log("Failded to fetch current ballot: ", error);
         }
@@ -69,7 +77,6 @@ function VoteInBallot() {
         if(!window.confirm("Are you sure?")) return;
         
         setIsSubmitting(true);
-
 
         try {
             await castVote(formData);
@@ -175,7 +182,7 @@ function VoteInBallot() {
                         </h3>
                         
                         <div className="space-y-3 mb-6">
-                            {ballot?.options.map((option) => (
+                            {(ballot?.options ?? []).map((option) => (
                                 <label 
                                     key={option.id}
                                     className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
