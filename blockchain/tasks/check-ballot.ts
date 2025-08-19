@@ -11,8 +11,7 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
 
     console.log(`🔍 Fetching information for Ballot ID: ${ballotid}...`);
 
-    // --- 自動讀取部署的合約地址 ---
-    // 假設您的 chainId for ganache 是 1337，如果不同請修改
+    // --- Automatically read the deployed contract address ---
     const chainId = (await ethers.provider.getNetwork()).chainId.toString();
     const deploymentPath = path.join(
       __dirname,
@@ -34,10 +33,10 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
     }
     console.log(`🏢 Using contract at address: ${contractAddress}`);
 
-    // --- 連接到合約 ---
+    // --- Connect to the contract ---
     const votingContract = await ethers.getContractAt("Voting", contractAddress);
 
-    // --- 檢查 Ballot 是否存在 ---
+    // --- Check if ballot exists ---
     const nextBallotId = await votingContract.nextBallotId();
     if (BigInt(ballotid) >= nextBallotId) {
         console.error(`❌ Error: Ballot ID ${ballotid} does not exist.`);
@@ -45,7 +44,6 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
         return;
     }
 
-    // --- 獲取 Ballot 主要資訊 ---
     const ballotInfo = await votingContract.ballots(ballotid);
 
     if (ballotInfo.startTime === 0n) { // 0n is BigInt zero
@@ -55,7 +53,6 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
 
     console.log("\n✅ Ballot Information Found:");
     console.log("===================================");
-    console.log(`  Title: ${ballotInfo.title}`);
     console.log(`  Admin: ${ballotInfo.admin}`);
     console.log(`  Start Time: ${new Date(Number(ballotInfo.startTime) * 1000).toLocaleString()} (${ballotInfo.startTime})`);
     console.log(`  Duration: ${ballotInfo.duration} seconds`);
@@ -63,12 +60,11 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
     console.log(`  Proposal Count: ${ballotInfo.proposalCount}`);
     console.log("===================================\n");
 
-    // --- 獲取 Proposals 資訊 ---
+    // --- Get Proposal info ---
     if (ballotInfo.proposalCount > 0) {
       console.log("📋 Proposals:");
       for (let i = 0; i < ballotInfo.proposalCount; i++) {
         const proposal = await votingContract.proposalsByBallot(ballotid, i);
-        console.log(`  [${i}] Name: ${proposal.name}`);
         console.log(`      Vote Count: ${proposal.voteCount}`);
       }
       console.log("-----------------------------------");

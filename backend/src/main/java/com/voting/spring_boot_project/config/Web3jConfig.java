@@ -24,7 +24,7 @@ public class Web3jConfig {
     private String privateKey;
 
     @Bean
-    public Web3j web3j() {
+    public Web3j web3j() { // Through web3j instance to send JSON-RPC requests to the Ethereum node
         return Web3j.build(new HttpService(nodeUrl));
     }
 

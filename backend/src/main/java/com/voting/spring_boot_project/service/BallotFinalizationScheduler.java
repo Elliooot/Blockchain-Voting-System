@@ -30,7 +30,7 @@ public class BallotFinalizationScheduler {
     private final OptionRepository optionRepository;
 
     // Execute once a minute
-    @Scheduled(fixedRate = 60000)
+    // @Scheduled(fixedRate = 60000)
     public void finalizeExpiredBallots() {
         System.out.println("Checking for expired ballots...");
 

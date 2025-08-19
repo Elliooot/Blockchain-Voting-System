@@ -72,6 +72,8 @@ public class BallotController {
 
     @GetMapping("/result")
     public ResponseEntity<List<ResultResponse>> getBallotResult() {
+        System.out.println("🎯 BallotController - getBallotResult() called");
+        ballotService.finalizeExpiredBallots();
         return ResponseEntity.ok(ballotService.getResultForCurrentUser());
     }
 }

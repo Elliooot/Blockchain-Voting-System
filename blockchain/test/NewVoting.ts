@@ -16,28 +16,23 @@ describe("Voting Contract", function() {
     it("1: Should create a ballot successfully", async function () {
         const { voting, admin, voter1, voter2 } = await loadFixture(deployVotingFixture);
 
-        const title = "Test Ballot";
         const now = Math.floor(Date.now() / 1000);
         const startTime = now + 300; // Starting 5 mins later
         const duration = 86400; // Lasting for 1 day
-        const proposalNames = ["Proposal A", "Proposal B"];
         const voters = [voter1.address, voter2.address];
 
         await (voting.connect(admin) as any).createBallot(
-            title, startTime, duration, proposalNames, voters
+            startTime, duration, voters
         );
 
         const ballot = await voting.ballots(0);
-        expect(ballot.title).to.equal(title);
         expect(ballot.startTime).to.equal(startTime);
         expect(ballot.duration).to.equal(duration);
         expect(ballot.admin).to.equal(admin.address);
         expect(ballot.terminated).to.be.false;
 
         const proposal0 = await voting.getProposal(0, 0);
-        expect(proposal0.name).to.equal("Proposal A");
         const proposal1 = await voting.getProposal(0, 1);
-        expect(proposal1.name).to.equal("Proposal B");
 
         const voter1Info = await voting.getVoter(0, voter1.address);
         expect(voter1Info.isRegistered).to.be.true;
@@ -48,15 +43,13 @@ describe("Voting Contract", function() {
     it("2: Should allow voting during the period", async function () {
         const { voting, admin, voter1, voter2 } = await loadFixture(deployVotingFixture);
 
-        const title = "Test Ballot";
         const now = Math.floor(Date.now() / 1000);
         const startTime = now + 300; // Starting 5 mins later
         const duration = 86400; // Lasting for 1 day
-        const proposalNames = ["Proposal A", "Proposal B"];
         const voters = [voter1.address, voter2.address];
 
         await (voting.connect(admin) as any).createBallot(
-            title, startTime, duration, proposalNames, voters
+            startTime, duration, voters
         );
         
         await ethers.provider.send("evm_increaseTime", [360]); // Skip 5 + 1 mins
@@ -71,15 +64,13 @@ describe("Voting Contract", function() {
     it("3: Should finalize and get result after voting", async function () {
         const { voting, admin, voter1, voter2, voter3 } = await loadFixture(deployVotingFixture);
 
-        const title = "Test Ballot";
         const now = Math.floor(Date.now() / 1000);
         const startTime = now + 300; // Starting 5 mins later
         const duration = 3600; // Lasting for 1 hour
-        const proposalNames = ["Proposal A", "Proposal B"];
         const voters = [voter1.address, voter2.address, voter3.address];
 
         await (voting.connect(admin) as any).createBallot(
-            title, startTime, duration, proposalNames, voters
+            startTime, duration, voters
         );
 
         await ethers.provider.send("evm_increaseTime", [360]); // Skip 6 mins
@@ -104,15 +95,13 @@ describe("Voting Contract", function() {
     it("4: Should handle tie results correctly", async function () {
         const { voting, admin, voter1, voter2 } = await loadFixture(deployVotingFixture);
 
-        const title = "Tie Test Ballot";
         const now = Math.floor(Date.now() / 1000);
         const startTime = now + 300;
         const duration = 3600;
-        const proposalNames = ["Proposal A", "Proposal B"];
         const voters = [voter1.address, voter2.address];
 
         await (voting.connect(admin) as any).createBallot(
-            title, startTime, duration, proposalNames, voters
+            startTime, duration, voters
         );
 
         await ethers.provider.send("evm_increaseTime", [360]);

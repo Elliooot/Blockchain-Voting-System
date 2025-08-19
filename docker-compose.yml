@@ -21,7 +21,10 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres
+      # - SPRING_DATASOURCE_URL=jdbc:postgresql://blockchain-voting-db:5432/postgres?sslmode=require
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/postgres?sslmode=require
+      - SPRING_DATASOURCE_USERNAME=admin_
+      - SPRING_DATASOURCE_PASSWORD=${SPRING_DATASOURCE_PASSWORD}
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
       - DEMO_BALLOT_IDS=102,103,104
     depends_on:
