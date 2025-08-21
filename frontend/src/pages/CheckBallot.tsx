@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowBack as ArrowBackIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import { editBallot, fetchBallotById, searchVoterByEmail } from '../api/apiService';
+import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
+import { fetchBallotById } from '../api/apiService';
 
 interface BallotOption {
   name: string;
@@ -44,9 +44,6 @@ interface ApiBallot {
 function CheckBallot() {
   const navigate = useNavigate();
   const [ballot, setBallot] = useState<ApiBallot | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [voterEmail, setVoterEmail] = useState(''); 
-  const [isAddingVoter, setIsAddingVoter] = useState(false);
   const [qualifiedVotersList, setQualifiedVotersList] = useState<Voter[]>([])
 
   const { ballotId } = useParams<{ ballotId: string }>();
@@ -73,13 +70,11 @@ function CheckBallot() {
 
         console.log("Qualified voter list: " + ballotData.qualifiedVotersId);
 
-        // 解析後端 ISO8601 的 Duration -> 小時數字字串
         const hoursFromIso = (iso: string) => {
           const m = iso?.match(/PT(\d+)H/i);
           return m ? m[1] : '';
         };
 
-        // 轉 datetime-local 可用的字串
         const toLocalDatetime = (iso: string) => {
           const d = new Date(iso);
           if (isNaN(d.getTime())) return '';
@@ -130,94 +125,6 @@ function CheckBallot() {
     }));
   };
 
-  const handleAddVoter = async () => {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!voterEmail || !emailRegex.test(voterEmail)) {
-        alert('Please enter a valid email.');
-        return;
-      }
-  
-      if (qualifiedVotersList.some(v => v.email === voterEmail.toLowerCase())) {
-        alert('This voter has already been added.');
-        return;
-      }
-  
-      console.log("Adding voter with email:", voterEmail.toLowerCase());
-  
-      setIsAddingVoter(true);
-      try {
-        const foundVoter: Voter = await searchVoterByEmail(voterEmail);
-  
-        // Verify if api returns a valid voter object
-        if (foundVoter && foundVoter.id) {
-          setQualifiedVotersList(prev => [...prev, foundVoter]);
-          setVoterEmail('');
-        } else {
-          alert(`Error: No user found with the email "${voterEmail}".`);
-        }
-      } catch (error) {
-        console.error("An error occurred while searching for the voter:", error);
-        alert('An error occurred while searching for the voter.');
-      } finally {
-        setIsAddingVoter(false);
-      }
-    };
-  
-    const handleRemoveVoter = (emailToRemove: string) => {
-      setQualifiedVotersList(prev => prev.filter(voter => voter.email !== emailToRemove));
-      
-      // Remove from original voter list
-      if (ballot?.qualifiedVotersEmail && ballot?.qualifiedVotersId) {
-        const indexToRemove = ballot.qualifiedVotersEmail.indexOf(emailToRemove);
-
-        if(indexToRemove >= 0) {
-            const idToRemove = ballot.qualifiedVotersId[indexToRemove];
-            setFormData(prev => ({
-              ...prev,
-              qualifiedVotersId: prev.qualifiedVotersId.filter(id => id !== idToRemove)
-            }));
-        }
-      }
-    };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    const allQualifiedVoterIds = [
-      ...(formData.qualifiedVotersId || []), // original
-      ...qualifiedVotersList.map(voter => voter.id) // new
-    ];
-
-    const uniqueVoterIds = [...new Set(allQualifiedVoterIds)];
-
-    const payload = {
-      ...(formData.title && { title: formData.title }),
-      ...(formData.description && { description: formData.description }),
-      ...(formData.options && { options: formData.options }),
-      ...(formData.startTime && { startTime: new Date(formData.startTime).toISOString() }),
-      ...(formData.duration && { duration: `PT${Number(formData.duration)}H` }),
-      ...(uniqueVoterIds.length > 0 && { qualifiedVoterIds: uniqueVoterIds }),
-    };
-
-    console.log("Form data: " + JSON.stringify(payload));
-
-    try {
-      const idNum = ballot?.id ?? (ballotId ? parseInt(ballotId, 10) : NaN);
-      if (!Number.isFinite(idNum)) {
-        throw new Error('Invalid ballot id');
-      }
-      await editBallot(idNum as number, payload);
-      alert('Ballot edited successfully!');
-      navigate('/dashboard/ballots');
-    } catch (error) {
-      console.error('Failed to edit ballot:', error);
-      alert('Failed to edit ballot. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const labelStyle = "block text-gray-700 text-sm text-left font-bold mb-2";
   const inputStyle = "shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-gray-100";
 
@@ -237,12 +144,10 @@ function CheckBallot() {
           </div>
     
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Edit Ballot</h1>
-            <p className="text-gray-600 mb-8">Fill out the form below to edit your ballot.</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Check Ballot</h1>
     
             <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-4xl">
-                <form onSubmit={handleSubmit} className="space-y-6">
-    
+              <form className="space-y-6">
                 <div>
                     <label className={labelStyle}>
                         Ballot Title
@@ -349,8 +254,26 @@ function CheckBallot() {
                     ))}
                     </div>
                 </div>
-    
-                </form>
+
+                <div>
+                  <label className={labelStyle}>
+                    Qualified Voters
+                  </label>
+                  
+                  <div className="flex flex-wrap gap-2 p-2 bg-gray-100 rounded-md min-h-[40px]">
+                    {currentOriginalEmails.map((voterEmail) => (
+                      <div key={voterEmail} className="flex items-center gap-2 bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        <span>{voterEmail}</span>
+                      </div>
+                    ))}
+                    {qualifiedVotersList.map((voter) => (
+                      <div key={voter.id} className="flex items-center gap-2 bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">
+                        <span>{voter.email}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </form>
             </div>
           </div>
         </div>

@@ -11,6 +11,7 @@ interface BallotOption {
 interface Voter {
   id: number;
   email: string;
+  walletAddress: string;
 }
 
 interface BallotFormData {
@@ -30,6 +31,14 @@ function CreateBallot() {
   const [isAddingVoter, setIsAddingVoter] = useState(false);
 
   const [qualifiedVotersList, setQualifiedVotersList] = useState<Voter[]>([])
+
+  const isValidEthAddress = (addr: unknown) => {
+    if (typeof addr !== 'string') return false;
+    const trimmed = addr.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'null') return false;
+    // Basic checksum-agnostic format check 0x + 40 hex chars
+    return /^0x[a-fA-F0-9]{40}$/.test(trimmed);
+  };
 
   const [formData, setFormData] = useState<BallotFormData>({
     title: '',
@@ -75,7 +84,8 @@ function CreateBallot() {
       return;
     }
 
-    if (qualifiedVotersList.some(v => v.email === voterEmail.toLowerCase())) {
+    const normalizedEmail = voterEmail.toLowerCase();
+    if (qualifiedVotersList.some(v => v.email.toLowerCase() === normalizedEmail)) {
       alert('This voter has already been added.');
       return;
     }
@@ -86,10 +96,18 @@ function CreateBallot() {
     try {
       const foundVoter: Voter = await searchVoterByEmail(voterEmail);
 
-      // Verify if api returns a valid voter object
-      if (foundVoter && foundVoter.id) {
-        setQualifiedVotersList(prev => [...prev, foundVoter]);
+      console.log('🔎 Found voter:', foundVoter);
+      // Verify if api returns a valid voter object and wallet address format
+      const hasValidWallet = foundVoter && isValidEthAddress(foundVoter.walletAddress);
+      if (hasValidWallet) {
+        // Prevent duplicates by ID as well
+        setQualifiedVotersList(prev => {
+          if (prev.some(v => v.id === foundVoter.id)) return prev;
+          return [...prev, foundVoter];
+        });
         setVoterEmail('');
+      } else if (foundVoter && !hasValidWallet) {
+        alert(`User "${voterEmail}" does not have a valid wallet address.`);
       } else {
         alert(`Error: No user found with the email "${voterEmail}".`);
       }

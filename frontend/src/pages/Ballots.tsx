@@ -7,6 +7,7 @@ import {
     Delete as DeleteIcon,
     HowToVote as VoteIcon,
     ZoomIn as ZoomInIcon,
+    ContentCopy as CopyIcon,
 } from '@mui/icons-material';
 import { fetchBallots, deleteBallot } from '../api/apiService';
 import { useNavigate } from 'react-router-dom';
@@ -27,6 +28,7 @@ interface ApiBallot {
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
   hasVoted: boolean;
+  txHash: string;
 }
 
 interface BallotTask {
@@ -44,6 +46,7 @@ interface BallotTask {
   qualifiedVoterIds: number[];
   status: 'Pending' | 'Active' | 'Ended';
   hasVoted: boolean;
+  txHash: string;
   onDeleted?: () => void;
 }
 
@@ -54,6 +57,7 @@ const TaskCard = ({
   options, 
   status, 
   hasVoted,
+  txHash,
   onDeleted, 
   userRole,
   isPinned,
@@ -120,9 +124,29 @@ const TaskCard = ({
               Vote
             </button>
             )}
-            {!isAdmin && hasVoted && (
+            {!isAdmin && hasVoted && txHash && (
               <div className="flex items-center justify-center flex-1 text-sm text-gray-500 font-semibold">
-                Voted
+                <span>Voted</span>
+                <button
+                  className={buttonStyle}
+                  title="Copy and View"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await navigator.clipboard.writeText(txHash);
+                      console.log("Transaction hash copied: ", txHash);
+                    } catch (error) {
+                      console.error("Failed to copy transaction hash: ", error);
+                    }
+
+                    window.open("https://sepolia.etherscan.io/txs?a=0x70Bb621fF195b121489E6f6f0cd139A068ECBAF8");
+                  }}
+                >
+                  <CopyIcon fontSize="small" />
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+                    {txHash.slice(0, 6)}...{txHash.slice(-4)}
+                  </span>
+                </button>
               </div>
             )}
           </>
@@ -136,9 +160,29 @@ const TaskCard = ({
             <button className={buttonStyle} title="Notes"><NoteIcon fontSize="small" /></button>
             <button className={buttonStyle} title="Detail" onClick={handleCheck}><ZoomInIcon fontSize="small" /></button>
             {isAdmin && ( <button className={buttonStyle} title="Delete" onClick={handleDelete}><DeleteIcon fontSize="small" /></button> )}
-            {!isAdmin && hasVoted && (
+            {!isAdmin && hasVoted && txHash && (
               <div className="flex items-center justify-center flex-1 text-sm text-gray-500 font-semibold">
-                Voted
+                <span>Voted</span>
+                <button
+                  className={buttonStyle}
+                  title="Copy and View"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    try {
+                      await navigator.clipboard.writeText(txHash);
+                      console.log("Transaction hash copied: ", txHash);
+                    } catch (error) {
+                      console.error("Failed to copy transaction hash: ", error);
+                    }
+
+                    window.open("https://sepolia.etherscan.io/txs?a=0x70Bb621fF195b121489E6f6f0cd139A068ECBAF8");
+                  }}
+                >
+                  <CopyIcon fontSize="small" />
+                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">
+                    {txHash.slice(0, 6)}...{txHash.slice(-4)}
+                  </span>
+                </button>
               </div>
             )}
           </>
@@ -219,7 +263,8 @@ function Ballots() {
             options: ballot.options,
             status: ballot.status,
             qualifiedVoterIds: ballot.qualifiedVoterIds,
-            hasVoted: ballot.hasVoted
+            hasVoted: ballot.hasVoted,
+            txHash: ballot.txHash
         }));
 
         setTasks(formattedTasks);
@@ -285,6 +330,7 @@ function Ballots() {
                       options={task.options}
                       status={task.status}
                       id={task.id}
+                      txHash={task.txHash}
                       onDeleted={loadBallots} 
                       userRole={user?.role || ''}
                       hasVoted={task.hasVoted}  

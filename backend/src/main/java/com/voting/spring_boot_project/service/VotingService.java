@@ -92,6 +92,10 @@ public class VotingService {
                 .build();
 
             Vote savedVote = voteRepository.save(newVote);
+
+            Integer updatedVoteCount = selectedOption.getVoteCount() + 1;
+            selectedOption.setVoteCount(updatedVoteCount);
+            optionRepository.save(selectedOption);
             
             return VoteResponse.builder()
                 .voteId(savedVote.getId())

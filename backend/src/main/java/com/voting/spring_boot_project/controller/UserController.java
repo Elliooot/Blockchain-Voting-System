@@ -39,12 +39,13 @@ public class UserController {
     public ResponseEntity<GetUserResponse> getUser(
         @RequestParam("email") String email
     ) {
-        User user = userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
         GetUserResponse response = GetUserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .walletAddress(user.getWalletAddress())
                 .build();
 
         return ResponseEntity.ok(response);

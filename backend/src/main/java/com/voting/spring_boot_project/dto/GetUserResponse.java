@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 public class GetUserResponse {
     private Integer id;
     private String email;
+    private String walletAddress;
     private List<Integer> userIds;
     private List<String> userEmails;
 }

@@ -20,7 +20,7 @@ interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
     token: string | null;
-    login: (token: string, rememberMe?: boolean) => void;
+    login: (token: string) => void;
     logout: () => void;
     deleteAccount: () => Promise<void>;
 }
@@ -65,25 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     localStorage.removeItem('token');
                 }
             }
-    
-            const sessionToken = sessionStorage.getItem('token');
-            if(sessionToken) {
-                try {
-                    const decodedUser = jwtDecode<User>(sessionToken);
-                    if (decodedUser.exp * 1000 > Date.now()) {
-                        setUser(decodedUser);
-                        setToken(sessionToken);
-                        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${sessionToken}`;
-                        return;
-                    } else {
-                        sessionStorage.removeItem('token');
-                    }
-                } catch (error) {
-                    console.error('Failed to decode session token', error);
-                    sessionStorage.removeItem('token');
-                }
-            }
-    
+
             setToken(null);
             setUser(null);
             delete axiosInstance.defaults.headers.common['Authorization'];
@@ -92,16 +74,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         initializeAuth();
     }, []);
 
-    const login = (token: string, rememberMe: boolean = false) => {
+    const login = (token: string) => {
         try {
             const decodedUser = jwtDecode<User>(token);
-            if(rememberMe) {
-                localStorage.setItem('token', token);
-                sessionStorage.removeItem('token');
-            } else {
-                sessionStorage.setItem('token', token);
-                localStorage.removeItem('token');
-            }
+            localStorage.setItem('token', token);
             setUser(decodedUser);
             setToken(token);
 
@@ -118,7 +94,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const logout = () => {
         localStorage.removeItem('token');
         sessionStorage.removeItem('token');
-
+        
         setToken(null);
         setUser(null)
 
@@ -136,14 +112,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 });
             }
 
-            // localStorage.removeItem('authToken');
-            // setUser(null);
             logout(); // logout to clear all status
             console.log('Account deleted successfully');
         } catch (error) {
             console.error('Failed to delete account', error);
-            // localStorage.removeItem('authToken');
-            // setUser(null);
             logout();
             throw error;
         }

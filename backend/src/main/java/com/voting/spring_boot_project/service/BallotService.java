@@ -35,6 +35,7 @@ import com.voting.spring_boot_project.entity.Option;
 import com.voting.spring_boot_project.entity.Role;
 import com.voting.spring_boot_project.entity.Status;
 import com.voting.spring_boot_project.entity.User;
+import com.voting.spring_boot_project.entity.Vote;
 import com.voting.spring_boot_project.repository.BallotRepository;
 import com.voting.spring_boot_project.repository.OptionRepository;
 import com.voting.spring_boot_project.repository.UserRepository;
@@ -101,7 +102,19 @@ public class BallotService {
                     BallotResponse response = convertToBallotResponse(ballot);
 
                     if(currentUser.getRole() == Role.Voter) {
-                        response.setHasVoted(voteRepository.existsByBallotAndVoter(ballot, currentUser));
+                        boolean hasVoted = voteRepository.existsByBallotAndVoter(ballot, currentUser);
+                        response.setHasVoted(hasVoted);
+                        
+                        if(hasVoted) {
+                            Vote vote = voteRepository.findByBallotAndVoter(ballot, currentUser);
+                            if(vote != null && vote.getTransactionHash() != null) {
+                                response.setTxHash(vote.getTransactionHash());
+                            } else {
+                                response.setTxHash("");
+                            }
+                        } else {
+                            response.setTxHash("");
+                        }
                     }
 
                     return response;
@@ -237,10 +250,26 @@ public class BallotService {
     public void deleteBallot(Integer ballotId){
         System.out.println("🚀 deleteBallot() method started");
 
+        Ballot ballot = ballotRepository.findById(ballotId)
+            .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
+
         System.out.println("Deleting ballot with id: " + ballotId);
         if(!ballotRepository.existsById(ballotId)){
             throw new RuntimeException("Ballot not found with id: " + ballotId);
         }
+
+        List<Vote> votes = voteRepository.findByBallotId(ballotId);
+        voteRepository.deleteAll(votes);
+
+        List<Option> options = optionRepository.findByBallotId(ballotId);
+        optionRepository.deleteAll(options);
+
+        ballot.getQualifiedVoters().clear();
+
+        if (ballot.getResultOptionIds() != null) {
+            ballot.getResultOptionIds().clear();
+        }
+
         ballotRepository.deleteById(ballotId);
     }
 
@@ -342,7 +371,6 @@ public class BallotService {
         List<Integer> qualifiedVotersId = ballot.getQualifiedVoters().stream()
                 .map(User::getId)
                 .toList();
-
 
         return BallotResponse.builder()
                 .id(ballot.getId())

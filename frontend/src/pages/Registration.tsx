@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../api/axiosConfig';
+import { useAuth } from '../contexts/AuthContext';
 
 function Registration() {
     const [formData, setFormData] = useState({
@@ -16,6 +17,7 @@ function Registration() {
     
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    const { login } = useAuth();
     
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -38,17 +40,26 @@ function Registration() {
             const response = await axiosInstance.post('/auth/register', requestData);
 
             if(response.status === 201 || response.status === 200) {
-                navigate('/login');
+                const token = response.data?.token;
+                if (token) {
+                    // login(token);
+                    navigate('/login');
+                } else {
+                    // Fallback: no token returned, go to login page
+                    navigate('/login');
+                }
             } else {
                 const errorText = await response.data;
                 setError(errorText);
                 console.error(errorText);
             }
         } catch(err: any) {
-            if(err.response){
-                setError(err.response.data.message || err.response.data);
+            const message = err.response?.data?.error || 'Registration failed. Please try again.';
+            setError(message); 
+            if (err?.response?.data) {
+                console.error("Registration failed:", err.response.data);
             } else {
-                setError('An error occurred during user registration');
+                console.error("Registration failed:", err);
             }
         }
     };
@@ -133,16 +144,6 @@ function Registration() {
                     
                     <button type='submit' className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors">Sign Up</button>
                     
-                    <div className="my-4 flex items-center before:flex-1 before:border-t before:border-gray-300 after:flex-1 after:border-t after:border-gray-300">
-                        <p className="text-center text-sm text-gray-500 mx-4">Or</p>
-                    </div>
-
-                    <div className="space-y-3">
-                        <button type='button' className={`${socialButtonStyle} bg-[#db4437] hover:bg-[#c1351d]`}>Sign Up with Google</button>
-                        <button type='button' className={`${socialButtonStyle} bg-[#3b5998] hover:bg-[#2d4373]`}>Sign Up with Facebook</button>
-                        <button type='button' className={`${socialButtonStyle} bg-[#333] hover:bg-[#222]`}>Sign Up with GitHub</button>
-                    </div>
-
                     <p className='text-center text-sm text-gray-600'>
                         Already have an account? <a href='/login' className="font-medium text-blue-600 hover:underline">Log in here</a>
                     </p>

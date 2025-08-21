@@ -13,4 +13,5 @@ import com.voting.spring_boot_project.entity.Option;
 public interface OptionRepository extends JpaRepository<Option, Integer>{
     Optional<Option> findByBallotAndBlockchainOptionId(Ballot ballot, Long blockchainOptionId);
     List<Option> findByBallot(Ballot ballot);
+    List<Option> findByBallotId(Integer ballotId);
 }

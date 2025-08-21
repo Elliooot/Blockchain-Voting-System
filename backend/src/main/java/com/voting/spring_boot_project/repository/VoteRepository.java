@@ -13,4 +13,6 @@ import com.voting.spring_boot_project.entity.Vote;
 public interface VoteRepository extends JpaRepository<Vote, Integer>{
     boolean existsByBallotAndVoter(Ballot ballot, User voter);
     List<Vote> findByVoter(User voter);
+    Vote findByBallotAndVoter(Ballot ballot, User currentUser);
+    List<Vote> findByBallotId(Integer ballotId);
 }

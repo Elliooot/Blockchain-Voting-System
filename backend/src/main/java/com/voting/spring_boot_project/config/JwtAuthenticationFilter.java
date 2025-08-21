@@ -34,6 +34,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         System.out.println("=================================");
         System.out.println("🌐 JWT Filter - Request URL: " + request.getRequestURL());
         System.out.println("🔧 JWT Filter - Request Method: " + request.getMethod());
+
+        final String requestPath = request.getServletPath();
+        System.out.println("🔍 JwtAuthenticationFilter - Processing: " + request.getMethod() + " " + requestPath);
+
+        if (requestPath.startsWith("/api/v1/auth/") || 
+            requestPath.startsWith("/api/v1/test/") ||
+            requestPath.equals("/api/v1/health")) {
+            System.out.println("✅ JwtAuthenticationFilter - Skipping JWT validation for: " + requestPath);
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
+        if ("OPTIONS".equals(request.getMethod())) {
+            System.out.println("✅ JwtAuthenticationFilter - Allowing OPTIONS request");
+            filterChain.doFilter(request, response);
+            return;
+        }
         
         final String authHeader = request.getHeader("Authorization");
         System.out.println("🔑 JWT Filter - Authorization Header: " + authHeader);

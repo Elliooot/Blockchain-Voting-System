@@ -27,4 +27,5 @@ public class BallotResponse {
     private List<Integer> qualifiedVotersId;
     private Status status;
     private boolean hasVoted;
+    private String txHash;
 }
