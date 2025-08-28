@@ -9,8 +9,6 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
     const { ballotid } = taskArgs;
     const { ethers } = hre;
 
-    console.log(`🔍 Fetching information for Ballot ID: ${ballotid}...`);
-
     // --- Automatically read the deployed contract address ---
     const chainId = (await ethers.provider.getNetwork()).chainId.toString();
     const deploymentPath = path.join(
@@ -31,7 +29,6 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
       console.error("❌ Voting contract address not found in deployed_addresses.json");
       return;
     }
-    console.log(`🏢 Using contract at address: ${contractAddress}`);
 
     // --- Connect to the contract ---
     const votingContract = await ethers.getContractAt("Voting", contractAddress);
@@ -40,7 +37,6 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
     const nextBallotId = await votingContract.nextBallotId();
     if (BigInt(ballotid) >= nextBallotId) {
         console.error(`❌ Error: Ballot ID ${ballotid} does not exist.`);
-        console.log(`ℹ️ The next available Ballot ID is ${nextBallotId.toString()}.`);
         return;
     }
 
@@ -51,23 +47,11 @@ task("check-ballot", "Fetches and displays information for a specific ballot fro
         return;
     }
 
-    console.log("\n✅ Ballot Information Found:");
-    console.log("===================================");
-    console.log(`  Admin: ${ballotInfo.admin}`);
-    console.log(`  Start Time: ${new Date(Number(ballotInfo.startTime) * 1000).toLocaleString()} (${ballotInfo.startTime})`);
-    console.log(`  Duration: ${ballotInfo.duration} seconds`);
-    console.log(`  Terminated: ${ballotInfo.terminated}`);
-    console.log(`  Proposal Count: ${ballotInfo.proposalCount}`);
-    console.log("===================================\n");
-
     // --- Get Proposal info ---
     if (ballotInfo.proposalCount > 0) {
-      console.log("📋 Proposals:");
       for (let i = 0; i < ballotInfo.proposalCount; i++) {
         const proposal = await votingContract.proposalsByBallot(ballotid, i);
-        console.log(`      Vote Count: ${proposal.voteCount}`);
       }
-      console.log("-----------------------------------");
     } else {
       console.log("📋 No proposals found for this ballot.");
     }

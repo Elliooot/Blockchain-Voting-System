@@ -27,16 +27,10 @@ function Login() {
 
         try {
             const response = await axiosInstance.post('/auth/authenticate', formData);
-            console.log("Login response: " + response.data);
-
             const token = response.data.token;
-
-            console.log("(Login)Token: " + token);
 
             if(token) { 
                 login(token);
-                console.log("✅ Token saved to localStorage");
-
                 navigate('/dashboard');
             } else {
                 setError('Login successful, but no authentication token was received.');

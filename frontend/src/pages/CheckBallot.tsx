@@ -60,15 +60,12 @@ function CheckBallot() {
 
   const loadBallot = useCallback(async () => {
     if(!ballotId){
-        console.log("No ballot ID provided");
         return;
     }
     try {
         const ballotData: ApiBallot = await fetchBallotById(parseInt(ballotId));
 
         setBallot(ballotData);
-
-        console.log("Qualified voter list: " + ballotData.qualifiedVotersId);
 
         const hoursFromIso = (iso: string) => {
           const m = iso?.match(/PT(\d+)H/i);

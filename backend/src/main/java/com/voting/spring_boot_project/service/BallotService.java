@@ -69,7 +69,6 @@ public class BallotService {
         } else if (currentUser.getRole() == Role.Voter) {
             ballots = ballotRepository.findBallotsForVoter(currentUser);
         } else {
-            System.out.println("Unknown role, returning empty list");
             ballots = new ArrayList<>();
         }
 
@@ -116,7 +115,6 @@ public class BallotService {
             .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
 
         Option[] options = ballot.getOptions().toArray(new Option[0]);
-        System.out.println("XOption size: " + options.length);
 
         return convertToBallotResponse(ballot);
     }
@@ -309,7 +307,6 @@ public class BallotService {
             ballotRepository.save(ballot);
 
         } catch (Exception e){
-            System.out.println("Failed to update ballot on blockchain: " + e.getMessage());
             e.printStackTrace();
         }
 

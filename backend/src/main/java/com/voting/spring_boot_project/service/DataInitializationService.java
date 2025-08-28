@@ -38,10 +38,7 @@ public class DataInitializationService implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) throws Exception {
-        System.out.println("🚀 DataInitializationService - Starting database initialization");
-        
         if (demoBallotIdsCsv == null || demoBallotIdsCsv.isBlank()) {
-            System.out.println("⚠️ No demo ballot IDs configured, skipping demo ballot creation");
             return;
         }
 
@@ -51,8 +48,6 @@ public class DataInitializationService implements ApplicationRunner {
                 .map(Integer::valueOf)
                 .toList();
 
-        System.out.println("🎯 Demo ballot IDs to create: " + demoIds);
-
         // Create demo admin user if not exists
         User demoAdmin = createDemoAdminIfNotExists();
 
@@ -60,9 +55,6 @@ public class DataInitializationService implements ApplicationRunner {
         for (Integer ballotId : demoIds) {
             createDemoBallotIfNotExists(ballotId, demoAdmin);
         }
-
-        System.out.println("✅ Database initialization completed");
-        System.out.println("ℹ️ Note: Demo ballots are created with auto-generated IDs, not the configured IDs from demo.ballot-ids");
     }
 
     private User createDemoAdminIfNotExists() {
@@ -70,7 +62,6 @@ public class DataInitializationService implements ApplicationRunner {
         Optional<User> existingAdmin = userRepository.findByEmail(adminEmail);
         
         if (existingAdmin.isPresent()) {
-            System.out.println("👤 Demo admin user already exists: " + adminEmail);
             return existingAdmin.get();
         }
 
@@ -83,7 +74,6 @@ public class DataInitializationService implements ApplicationRunner {
                 .build();
 
         userRepository.save(demoAdmin);
-        System.out.println("✅ Created demo admin user: " + adminEmail);
         return demoAdmin;
     }
 
@@ -94,7 +84,6 @@ public class DataInitializationService implements ApplicationRunner {
         .anyMatch(b -> Objects.equals(b.getTitle(), title));
                 
         if (ballotExists) {
-            System.out.println("📊 Demo ballot '" + title + "' already exists, skipping creation");
             return;
         }
 
@@ -129,7 +118,6 @@ public class DataInitializationService implements ApplicationRunner {
             // Use a mutable list implementation to avoid UnsupportedOperationException from immutable List.of(...).
             savedBallot.setResultOptionIds(new ArrayList<>(List.of(maxVoteOption.getId())));
             ballotRepository.save(savedBallot);
-            System.out.println("🏆 Result option for ballot '" + savedBallot.getTitle() + "' is: " + maxVoteOption.getName());
         }
     }
 

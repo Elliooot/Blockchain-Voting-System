@@ -37,7 +37,6 @@ function VoteInBallot() {
 
     const loadBallot = useCallback(async () => {
         if(!ballotId){
-            console.log("No ballot ID provided");
             return;
         }
         try {

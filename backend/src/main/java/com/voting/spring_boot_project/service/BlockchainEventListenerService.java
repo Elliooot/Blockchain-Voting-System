@@ -41,13 +41,11 @@ public class BlockchainEventListenerService {
             // Listen to BallotResultFinalized event
             contract.ballotResultFinalizedEventFlowable(DefaultBlockParameterName.LATEST, DefaultBlockParameterName.LATEST)
                 .subscribe(event -> {
-                    System.out.println("Received BallotResultFinalized event for ballot: " + event.ballotId);
-
                     // Update the result in DB
                     updateBallotResult(event.ballotId.longValue(), event.resultProposalIds);
                 });
         } catch (Exception e) {
-            System.out.println("Failed to start event listener: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -66,9 +64,7 @@ public class BlockchainEventListenerService {
             ballot.setResultOptionIds(resultOptionIds);
             ballotRepository.save(ballot);
 
-            System.out.println("Updated ballot result in DB for ballot ID: " + ballot.getId());
         } catch (Exception e) {
-            System.out.println("Failed to update ballot result: " + e.getMessage());
             e.printStackTrace();
         }
     }

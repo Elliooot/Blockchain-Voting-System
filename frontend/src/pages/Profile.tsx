@@ -19,7 +19,6 @@ function Profile() {
     const loadVoteRecords = async () => {
         try {
             const recordData: apiVoteRecord[] = await getVoteRecords();
-            console.log("Fetched vote records:", recordData);
             
             const recordForm = recordData.map(vote => ({
                 voteId: vote.voteId,

@@ -60,29 +60,22 @@ public class AuthenticationService {
         var user = userRepository.findByEmail(request.getEmail().toLowerCase())
                 .orElseThrow();
         
-        System.out.println("🔵 [AuthService] Generating JWT token...");
         var jwtToken = jwtService.generateToken(user);
-        System.out.println("🔵 [AuthService] Token generated successfully");
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
     }
 
     private void assignDemoBallotsToUser(User user) {
-        System.out.println("🎯 assignDemoBallotsToUser - Starting for user: " + user.getEmail());
-
         List<Integer> demoIds = List.of(1502, 1503, 1504);
 
-        System.out.println("🎯 Parsed demo ballot IDs: " + demoIds);
 
         for (Integer id : demoIds) {
             ballotRepository.findById(id).ifPresent(ballot -> {
-                System.out.println("🎯 Processing ballot ID: " + ballot.getId() + ", Title: " + ballot.getTitle());
                 var qv = ballot.getQualifiedVoters();
                 boolean exists = qv.stream().anyMatch(u -> u.getId().equals(user.getId()));
 
                 if (!exists) {
-                    System.out.println("✅ Adding user " + user.getEmail() + " to ballot " + ballot.getId());
                     qv.add(user);
                     ballotRepository.save(ballot);
                 } else {
@@ -90,7 +83,5 @@ public class AuthenticationService {
                 }
             });
         }
-
-        System.out.println("🎯 Demo ballot assignment completed");
     }
 }

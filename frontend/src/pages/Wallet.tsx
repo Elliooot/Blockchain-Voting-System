@@ -25,7 +25,6 @@ function Wallet() {
                 const addressInDB = await loadUserWallet();
 
                 if(addressInDB) {
-                    console.log("Loaded wallet address from database: " + addressInDB);
                     setSavedWalletAddress(addressInDB);
                 }
             } catch (error) {
@@ -38,7 +37,6 @@ function Wallet() {
 
     const connectAndSaveWallet = async () => {
         if (isConnecting) {
-            console.log("Already connecting, please wait...");
             return;
         }
 
@@ -53,15 +51,9 @@ function Wallet() {
         try {
             const newAccounts = await window.ethereum.request({ method: "eth_requestAccounts" });
             const newAddress = newAccounts[0];
-            console.log("Connected to account: ", newAccounts[0]);
 
             if(newAddress){
-                console.log("📤 Calling updateWalletAddress with:", newAddress);
-                const updateResponse = await updateWalletAddress(newAddress);
-                console.log("📥 updateWalletAddress response:", updateResponse);
-                
                 setSavedWalletAddress(newAddress);
-                console.log("✅ Wallet address saved: " + newAddress);
             }
         } catch (error: any) {
             console.error("❌ Full error object:", error);
@@ -87,7 +79,6 @@ function Wallet() {
         try {
             await updateWalletAddress("");
             setSavedWalletAddress(null);
-            console.log("Wallet address removed from database.");
         } catch (error) {
             console.error("Failed to remove wallet address from database: " + error);
             setError("Failed to remove wallet address from database. Please try again.");

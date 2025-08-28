@@ -31,35 +31,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response, @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         
-        System.out.println("=================================");
-        System.out.println("🌐 JWT Filter - Request URL: " + request.getRequestURL());
-        System.out.println("🔧 JWT Filter - Request Method: " + request.getMethod());
-
         final String requestPath = request.getServletPath();
-        System.out.println("🔍 JwtAuthenticationFilter - Processing: " + request.getMethod() + " " + requestPath);
 
         if (requestPath.startsWith("/api/v1/auth/") || 
             requestPath.startsWith("/api/v1/test/") ||
             requestPath.equals("/api/v1/health")) {
-            System.out.println("✅ JwtAuthenticationFilter - Skipping JWT validation for: " + requestPath);
             filterChain.doFilter(request, response);
             return;
         }
         
         if ("OPTIONS".equals(request.getMethod())) {
-            System.out.println("✅ JwtAuthenticationFilter - Allowing OPTIONS request");
             filterChain.doFilter(request, response);
             return;
         }
         
         final String authHeader = request.getHeader("Authorization");
-        System.out.println("🔑 JWT Filter - Authorization Header: " + authHeader);
-        
         final String jwt;
         final String userEmail;
         
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("❌ JWT Filter - No valid Authorization header, skipping JWT processing");
             filterChain.doFilter(request, response);
             return;
         }
@@ -68,9 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         
         try {
             userEmail = jwtService.extractUsername(jwt);
-            System.out.println("📧 JWT Filter - Extracted email: '" + userEmail + "'");
         } catch (Exception e) {
-            System.out.println("❌ JWT Filter - Failed to extract email: " + e.getMessage());
             filterChain.doFilter(request, response);
             return;
         }
@@ -78,8 +66,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-                
-                System.out.println("✅ Filter loaded user details. Authorities found: " + userDetails.getAuthorities());
                 
                 if(jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -89,22 +75,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                    
-                    System.out.println("🔒 SecurityContext has been set. Final authorities in context: " + 
-                        SecurityContextHolder.getContext().getAuthentication().getAuthorities());
                 } else {
-                    System.out.println("❌ JWT Filter - Token is invalid");
+                    System.out.println("⚠️ JWT Filter - Invalid token");
                 }
             } catch (Exception e) {
-                System.out.println("❌ JWT Filter - Error during user loading or token validation: " + e.getMessage());
                 e.printStackTrace();
             }
         } else {
             System.out.println("⚠️ JWT Filter - User email is null or authentication already exists");
         }
-        
-        System.out.println("🏁 JWT Filter - Processing complete, continuing filter chain");
-        System.out.println("=================================");
         
         filterChain.doFilter(request, response);
     }

@@ -31,7 +31,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     public Map<String, String> getWalletAddress(){
-        System.out.println("Get Wallet Address Method Called");
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User user = userRepository.findByEmail(userEmail)
@@ -44,28 +43,19 @@ public class UserService {
     }
 
     public Map<String, String> updateWalletAddress(UpdateWalletRequest request){
-        System.out.println("Update Wallet Address Method Called");
-
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String userEmail = auth.getName();
             User user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            System.out.println("User's current wallet address: " + user.getWalletAddress());
-            System.out.println("Request wallet address: " + request.getWalletAddress());
-
             if(request.getWalletAddress() == null || request.getWalletAddress().isEmpty()){
-                System.out.println("Disconnect Wallet Address");
                 user.setWalletAddress(null);
             } else {
-                System.out.println("Update Wallet Address");
-                System.out.println("New wallet address: " + request.getWalletAddress());
                 user.setWalletAddress(request.getWalletAddress());
             }
 
             User savedUser = userRepository.save(user);
-            System.out.println("✅ User saved successfully. New wallet address: " + savedUser.getWalletAddress());
             
             Map<String, String> response = new HashMap<>();
             response.put("message", "Wallet address updated successfully");
@@ -74,7 +64,6 @@ public class UserService {
             return response;
             
         } catch (Exception e) {
-            System.out.println("❌ Error updating wallet address: " + e.getMessage());
             e.printStackTrace();
             throw e;
         }
@@ -102,8 +91,6 @@ public class UserService {
         }
 
         userRepository.delete(user); // Delete user in repo
-
-        System.out.println("User account deleted: " + userEmail);
     }
     
     @Transactional
@@ -124,7 +111,5 @@ public class UserService {
         // update password
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-        
-        System.out.println("Password changed successfully for user: " + email);
     }
 }

@@ -45,13 +45,10 @@ public class SecurityConfig {
             .requireExplicitSave(true)
         );
 
-        System.out.println("🔧 SecurityConfig - Configuring security filter chain");
-        
         http
             .csrf(csrf -> csrf.disable())
             .cors(Customizer.withDefaults())
             .authorizeHttpRequests(auth -> {
-                System.out.println("🛡️ SecurityConfig - Setting up authorization rules");
                 auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                 auth.requestMatchers("/api/v1/auth/**").permitAll();
                 auth.requestMatchers("/api/v1/ballots/**").authenticated();

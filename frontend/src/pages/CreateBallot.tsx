@@ -90,13 +90,10 @@ function CreateBallot() {
       return;
     }
 
-    console.log("XXX Adding voter with email:", voterEmail.toLowerCase());
-
     setIsAddingVoter(true);
     try {
       const foundVoter: Voter = await searchVoterByEmail(voterEmail);
 
-      console.log('🔎 Found voter:', foundVoter);
       // Verify if api returns a valid voter object and wallet address format
       const hasValidWallet = foundVoter && isValidEthAddress(foundVoter.walletAddress);
       if (hasValidWallet) {

@@ -51,8 +51,6 @@ public class VotingService {
     @PreAuthorize("hasAuthority('Voter')")
     public VoteResponse castVote(VoteRequest request){ // Contract deployer calls the contract and acts as proxy to vote using its private key and voters address
 
-        System.out.println("castVote() method started");
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User voter = userRepository.findByEmail(userEmail)
@@ -62,7 +60,6 @@ public class VotingService {
             .orElseThrow(() -> new RuntimeException("Option not found"));
 
         try {
-            System.out.println("Interacting wiht smart contract...");
 
             BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
             BigInteger gasLimit = BigInteger.valueOf(300_000L);
@@ -75,13 +72,11 @@ public class VotingService {
             BigInteger blockchainOptionId = BigInteger.valueOf(selectedOption.getBlockchainOptionId());
             String voterWalletAddress = voter.getWalletAddress();
 
-            System.out.println("Casting vote on blockchain for ballotId: " + blockchainBallotId + ", optionId: " + blockchainOptionId + ", voterAddress: " + voterWalletAddress);
 
             // Calling vote() method and send
             TransactionReceipt receipt = contract.vote(blockchainBallotId, blockchainOptionId, voterWalletAddress).send();
 
             String txHash = receipt.getTransactionHash();
-            System.out.println("Vote transaction successful. Hash: " + txHash);
 
             var newVote = Vote.builder()
                 .option(selectedOption)
@@ -105,13 +100,11 @@ public class VotingService {
                 .build();
                 
         } catch (Exception e) {
-            System.out.println("Failed to interact with smart contract: " + e.getMessage());
             throw new RuntimeException("Failed to cast vote on the blockchain");
         }
     }
 
     public List<VoteRecordResponse> getVoteRecordsForCurrentUser() {
-        System.out.println("🚀 getVoteRecordsForCurrentUser() method started");
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();

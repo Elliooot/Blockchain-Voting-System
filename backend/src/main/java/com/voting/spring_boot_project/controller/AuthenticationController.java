@@ -32,12 +32,7 @@ public class AuthenticationController {
     public ResponseEntity<AuthenticationResponse> authenticate(
         @RequestBody AuthenticationRequest request
     ) {
-        System.out.println("🎯 [AuthController] /authenticate endpoint reached!");
-        System.out.println("🎯 [AuthController] Request email: " + request.getEmail());
-        
         AuthenticationResponse response = authenticationService.authenticate(request);
-        
-        System.out.println("🎯 [AuthController] Service completed, returning response");
         return ResponseEntity.ok(response);
     }
 }

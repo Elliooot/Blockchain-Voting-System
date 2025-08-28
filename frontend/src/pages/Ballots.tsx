@@ -134,7 +134,6 @@ const TaskCard = ({
                     e.preventDefault();
                     try {
                       await navigator.clipboard.writeText(txHash);
-                      console.log("Transaction hash copied: ", txHash);
                     } catch (error) {
                       console.error("Failed to copy transaction hash: ", error);
                     }
@@ -170,7 +169,6 @@ const TaskCard = ({
                     e.preventDefault();
                     try {
                       await navigator.clipboard.writeText(txHash);
-                      console.log("Transaction hash copied: ", txHash);
                     } catch (error) {
                       console.error("Failed to copy transaction hash: ", error);
                     }

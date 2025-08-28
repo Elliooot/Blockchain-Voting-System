@@ -32,16 +32,11 @@ public class BallotController {
 
     @GetMapping
     public List<BallotResponse> getBallotsForCurrentUser() {
-        System.out.println("🎯 BallotController - getBallotsForCurrentUser() called");
-        System.out.println("🔍 BallotController - Current SecurityContext: " + 
-            SecurityContextHolder.getContext().getAuthentication());
-        
         return ballotService.getBallotsForCurrentUser();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<BallotResponse> getBallotById(@PathVariable Integer id) {
-        System.out.println("🎯 BallotController - getBallotById() called");
         return ResponseEntity.ok(ballotService.getBallotById(id));
     }
 
@@ -49,7 +44,6 @@ public class BallotController {
     public ResponseEntity<BallotResponse> createBallot(
         @RequestBody CreateBallotRequest request
     ) {
-        System.out.println("🎯 BallotController - createBallot() called");
         return ResponseEntity.ok(ballotService.createBallot(request));
     }
 
@@ -57,13 +51,11 @@ public class BallotController {
     public ResponseEntity<BallotResponse> updateBallot(
         @PathVariable Integer id, @RequestBody UpdateBallotRequest request
     ) {
-        System.out.println("🎯 BallotController - updateBallot() called");
         return ResponseEntity.ok(ballotService.updateInfo(id, request));
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Map<String, String>> deleteBallot(@PathVariable Integer id) {
-        System.out.println("🎯 BallotController - deleteBallot() called");
         ballotService.deleteBallot(id);
         Map<String, String> response = new HashMap<>();
         response.put("message", "Ballot id: " + id + " delete successfully");
@@ -72,7 +64,6 @@ public class BallotController {
 
     @GetMapping("/result")
     public ResponseEntity<List<ResultResponse>> getBallotResult() {
-        System.out.println("🎯 BallotController - getBallotResult() called");
         ballotService.finalizeExpiredBallots();
         return ResponseEntity.ok(ballotService.getResultForCurrentUser());
     }

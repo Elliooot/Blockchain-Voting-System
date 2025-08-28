@@ -41,9 +41,6 @@ public class UserController {
     ) {
         // Debug logging
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("🔍 UserController - Current user: " + auth.getName());
-        System.out.println("🔍 UserController - Current authorities: " + auth.getAuthorities());
-        
         User user = userRepository.findByEmail(email.toLowerCase())
                 .orElseThrow(() -> new RuntimeException("User not found: " + email));
 
@@ -61,8 +58,6 @@ public class UserController {
     public ResponseEntity<GetUserResponse> getAllUser() {
         // Debug logging
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("🔍 UserController.getAllUser - Current user: " + auth.getName());
-        System.out.println("🔍 UserController.getAllUser - Current authorities: " + auth.getAuthorities());
         
         List<User> users = userRepository.findAll();
 

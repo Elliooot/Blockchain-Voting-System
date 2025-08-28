@@ -2,11 +2,8 @@ import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 // const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1" || "/api/v1";
-// const baseURL = "/api/v1";
 const baseURL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
   
-console.log("🔍 API Base URL:", import.meta.env.VITE_API_BASE_URL);
-console.log("🔍 Environment variables:", import.meta.env);
 
 const axiosInstance: AxiosInstance = axios.create({
     baseURL: baseURL,

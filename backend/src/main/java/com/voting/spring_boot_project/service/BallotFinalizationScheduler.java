@@ -32,11 +32,7 @@ public class BallotFinalizationScheduler {
     // Execute once a minute
     // @Scheduled(fixedRate = 60000)
     public void finalizeExpiredBallots() {
-        System.out.println("Checking for expired ballots...");
-
         List<Ballot> expiredBallots = ballotRepository.findExpiredBallotsWithoutResults(Status.Ended);
-
-        System.out.println("Number of expired ballots: " + expiredBallots.size());
 
         for (Ballot ballot: expiredBallots){
             finalizeResultOnBlockchain(ballot, ballot.getBlockchainBallotId());
@@ -70,7 +66,6 @@ public class BallotFinalizationScheduler {
             if(resultEvents.isEmpty()) throw new RuntimeException("No resultFinalized events found");
     
             List<BigInteger> blockchainResultIds = resultEvents.get(0).resultProposalIds;
-            System.out.println("Blockchain result IDs: " + blockchainResultIds);
 
             List<Integer> resultIds = blockchainResultIds.stream()
                     .map(id -> optionRepository.findByBallotAndBlockchainOptionId(ballot, id.longValue())
@@ -79,14 +74,11 @@ public class BallotFinalizationScheduler {
                     .filter(Objects::nonNull)
                     .toList();
 
-            System.out.println("Result IDs: " + resultIds);
     
             ballot.setResultOptionIds(resultIds);
             ballotRepository.save(ballot);
 
-            System.out.println("Updated ballot result in DB for ballot ID: " + ballot.getId());
         } catch (Exception e) {
-            System.out.println("Failed finalize ballot result on blockchain: " + e.getMessage());
             e.printStackTrace();
         }
     }

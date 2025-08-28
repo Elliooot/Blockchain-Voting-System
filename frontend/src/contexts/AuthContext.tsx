@@ -84,8 +84,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             // Set the global header of axios, all subsequent requests will automatically carry the token
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
-            console.log("Token:", token);
-            console.log("Decoded User:", decodedUser);
         } catch (error) {
             console.error("Failed to decode token on login", error);
         }
@@ -113,7 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
 
             logout(); // logout to clear all status
-            console.log('Account deleted successfully');
         } catch (error) {
             console.error('Failed to delete account', error);
             logout();

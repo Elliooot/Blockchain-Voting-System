@@ -63,7 +63,6 @@ function EditBallot() {
 
   const loadBallot = useCallback(async () => {
     if(!ballotId){
-        console.log("No ballot ID provided");
         return;
     }
     try {
@@ -71,15 +70,12 @@ function EditBallot() {
 
         setBallot(ballotData);
 
-        console.log("Qualified voter list: " + ballotData.qualifiedVotersId);
-
-        // 解析後端 ISO8601 的 Duration -> 小時數字字串
+        // Parse the backend ISO8601 Duration -> hour numeric string
         const hoursFromIso = (iso: string) => {
           const m = iso?.match(/PT(\d+)H/i);
           return m ? m[1] : '';
         };
 
-        // 轉 datetime-local 可用的字串
         const toLocalDatetime = (iso: string) => {
           const d = new Date(iso);
           if (isNaN(d.getTime())) return '';
@@ -142,8 +138,6 @@ function EditBallot() {
         return;
       }
   
-      console.log("Adding voter with email:", voterEmail.toLowerCase());
-  
       setIsAddingVoter(true);
       try {
         const foundVoter: Voter = await searchVoterByEmail(voterEmail);
@@ -199,8 +193,6 @@ function EditBallot() {
       ...(formData.duration && { duration: `PT${Number(formData.duration)}H` }),
       ...(uniqueVoterIds.length > 0 && { qualifiedVoterIds: uniqueVoterIds }),
     };
-
-    console.log("Form data: " + JSON.stringify(payload));
 
     try {
       const idNum = ballot?.id ?? (ballotId ? parseInt(ballotId, 10) : NaN);

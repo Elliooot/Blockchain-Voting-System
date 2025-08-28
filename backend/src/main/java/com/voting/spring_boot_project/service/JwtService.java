@@ -42,8 +42,6 @@ public class JwtService {
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> extraClaims = new HashMap<>();
-        System.out.println("Generating token for user: " + userDetails.getUsername());
-
 
         if (userDetails instanceof User) {
             User user = (User) userDetails;
@@ -54,7 +52,6 @@ public class JwtService {
             extraClaims.put("gender", user.getGender());
             extraClaims.put("dateOfBirth", user.getDateOfBirth());
             extraClaims.put("userId", user.getId());
-            System.out.println("Successfully put user details into extraClaims");
         }
 
         userDetails.getAuthorities().stream()
