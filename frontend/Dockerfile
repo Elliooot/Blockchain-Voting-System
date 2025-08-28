@@ -9,11 +9,14 @@ WORKDIR /app
 COPY package*.json ./
 # Clean install dependencies according to package-lock.json
 RUN npm ci
-# Cpoy the rest of application files
+# Copy the rest of application files
 COPY . .
-# Set environment variable to disable ESLint during build
+# Accept build argument for API URL
+ARG VITE_API_BASE_URL
+# Set environment variables
 ENV CI=false
 ENV NODE_ENV=production
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 # Compile source code, bundle and compress
 RUN npm run build
 

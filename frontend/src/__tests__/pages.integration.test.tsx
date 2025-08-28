@@ -48,7 +48,7 @@ vi.mock('../api/apiService', () => ({
   updateWalletAddress: vi.fn(),
 }));
 
-describe('Pages smoke tests', () => {
+describe('Pages integration tests', () => {
   it('renders Homepage', async () => {
     await act(async () => {
       renderWithRouter(<Homepage />);

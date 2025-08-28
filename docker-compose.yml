@@ -7,8 +7,11 @@ services:
       - "3000:80"
     env_file:
       - ./frontend/.env
+    environment:
+      - VITE_API_BASE_URL=http://spring-boot-app:8080/api/v1
     depends_on:
-      - spring-boot-app
+      spring-boot-app:
+        condition: service_started
     networks:
       - app
 
@@ -17,7 +20,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"  # 啟用端口用於本地測試
+      - "8080:8080"
     env_file:
       - ./backend/.env
     environment:
@@ -28,13 +31,11 @@ services:
       - SPRING_DATASOURCE_USERNAME=william
       - SPRING_DATASOURCE_PASSWORD=william
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - DEMO_BALLOT_IDS=102,103,104
     depends_on:
       db:
         condition: service_healthy
     networks:
       - app
-      - db
 
   db:
     image: postgres:14
@@ -51,12 +52,10 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - db
+      - app
 
 networks:
   app:
-    driver: bridge
-  db:
     driver: bridge
 
 volumes:

@@ -2,7 +2,6 @@ package com.voting.spring_boot_project.service;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -57,45 +56,24 @@ public class BallotService {
     @Value("${blockchain.contract.address}")
     private String contractAddress;
 
-    @Value("${demo.ballot-ids:}")
-    private String demoBallotIdsCsv;
-
     public List<BallotResponse> getBallotsForCurrentUser() {
-        System.out.println("🚀 getBallotsForCurrentUser() method started");
-        
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("🔐 Current authentication: " + auth);
-        System.out.println("👤 Principal: " + auth.getPrincipal());
-        System.out.println("🎫 Authorities: " + auth.getAuthorities());
-        
         String userEmail = auth.getName();
-        System.out.println("📧 User email from SecurityContext: " + userEmail);
-        
         User currentUser = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        System.out.println("👤 Found user: " + currentUser.getEmail());
-        System.out.println("🎭 User role: " + currentUser.getRole());
         
         List<Ballot> ballots;
 
         if (currentUser.getRole() == Role.ElectoralAdmin) {
-            System.out.println("🔧 Fetching ballots for ElectoralAdmin");
             ballots = ballotRepository.findByAdmin(currentUser);
         } else if (currentUser.getRole() == Role.Voter) {
-            System.out.println("🗳️ Fetching ballots for Voter");
             ballots = ballotRepository.findBallotsForVoter(currentUser);
-                // .stream()
-                // .filter(b -> !voteRepository.existsByBallotAndVoter(b, currentUser))
-                // .collect(Collectors.toList());
         } else {
-            System.out.println("❓ Unknown role, returning empty list");
+            System.out.println("Unknown role, returning empty list");
             ballots = new ArrayList<>();
         }
 
         List<Ballot> updatedBallots = ballots.stream().map(this::checkAndUpdateStatus).collect(Collectors.toList());
-        
-        System.out.println("📊 Found " + updatedBallots.size() + " ballots");
         
         return updatedBallots.stream()
                 .map(ballot -> {
@@ -134,8 +112,6 @@ public class BallotService {
     }
 
     public BallotResponse getBallotById(Integer ballotId) {
-        System.out.println("🚀 getBallotById() method started");
-
         Ballot ballot = ballotRepository.findById(ballotId)
             .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
 
@@ -149,10 +125,7 @@ public class BallotService {
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     @Transactional
     public BallotResponse createBallot(CreateBallotRequest request) {
-        System.out.println("🚀 createBallot() method started");
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // Get authenticated user from the secure context
         String userEmail = auth.getName();
         User admin = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin not found"));
@@ -178,14 +151,8 @@ public class BallotService {
 
         ballot.setOptions(request.getOptions());
 
-        // Ballot createdballotInDB = ballotRepository.save(ballot);
-
         // Calling Smart Contract
         try {
-            System.out.println("Interacting with smart contract...");
-            System.out.println("Contract address: " + contractAddress);
-            System.out.println("Web3j URL: " + web3j.web3ClientVersion().send().getWeb3ClientVersion());
-            
             BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
             BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
             ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
@@ -211,9 +178,6 @@ public class BallotService {
                 voterAddresses
             ).send();
 
-            System.out.println("Smart Contract transaction successful. Hash: " + receipt.getTransactionHash());
-            System.out.println("Gas used: " + receipt.getGasUsed());
-
             List<Voting.BallotCreatedEventResponse> ballotEvents = contract.getBallotCreatedEvents(receipt);
             if(ballotEvents.isEmpty()) throw new RuntimeException("No BallotCreated event found");
             Long blockchainBallotId = ballotEvents.get(0).ballotId.longValue();
@@ -231,13 +195,10 @@ public class BallotService {
                 Option correspondingOption = requestOptions.get(i);
                 
                 correspondingOption.setBlockchainOptionId(event.proposalId.longValue());
-                System.out.println("Pairing Option '" + correspondingOption.getName() + "' with blockchain ID: " + event.proposalId);
             }
 
             ballotRepository.save(ballot);
         } catch (Exception e) {
-            System.out.println("Failed interacting with smart contract: " + e.getMessage());
-            System.out.println("Exception type: " + e.getClass().getSimpleName());
             e.printStackTrace();
             // ballotRepository.delete(createdballotInDB);
             throw new RuntimeException("Failed to create ballot on the blockchain: " + e.getMessage(), e);
@@ -248,12 +209,9 @@ public class BallotService {
 
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     public void deleteBallot(Integer ballotId){
-        System.out.println("🚀 deleteBallot() method started");
-
         Ballot ballot = ballotRepository.findById(ballotId)
             .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
 
-        System.out.println("Deleting ballot with id: " + ballotId);
         if(!ballotRepository.existsById(ballotId)){
             throw new RuntimeException("Ballot not found with id: " + ballotId);
         }
@@ -295,7 +253,6 @@ public class BallotService {
             Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
 
             BigInteger bcId = BigInteger.valueOf(ballot.getBlockchainBallotId());
-            System.out.println("Attempting to update ballot on chain with blockchainBallotId: " + bcId);
 
             long chainNow = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
                 .send().getBlock().getTimestamp().longValue();
@@ -398,11 +355,7 @@ public class BallotService {
 
     @Transactional
     public void finalizeExpiredBallots() {
-        System.out.println("Checking for expired ballots...");
-
         List<Ballot> expiredBallots = ballotRepository.findExpiredBallotsWithoutResults(Status.Ended);
-
-        System.out.println("Number of expired ballots: " + expiredBallots.size());
 
         for (Ballot ballot: expiredBallots){
             finalizeResultOnBlockchain(ballot, ballot.getBlockchainBallotId());
@@ -430,7 +383,6 @@ public class BallotService {
             if(resultEvents.isEmpty()) throw new RuntimeException("No resultFinalized events found");
     
             List<BigInteger> blockchainResultIds = resultEvents.get(0).resultProposalIds;
-            System.out.println("Blockchain result IDs: " + blockchainResultIds);
 
             List<Integer> resultIds = blockchainResultIds.stream()
                     .map(id -> optionRepository.findByBallotAndBlockchainOptionId(ballot, id.longValue())
@@ -439,21 +391,15 @@ public class BallotService {
                     .filter(Objects::nonNull)
                     .toList();
 
-            System.out.println("Result IDs: " + resultIds);
-    
             ballot.setResultOptionIds(resultIds);
             ballotRepository.save(ballot);
 
-            System.out.println("Updated ballot result in DB for ballot ID: " + ballot.getId());
         } catch (Exception e) {
-            System.out.println("Failed finalize ballot result on blockchain: " + e.getMessage());
             e.printStackTrace();
         }
     }
 
     public List<ResultResponse> getResultForCurrentUser() {
-        System.out.println("🚀 getResultForCurrentUser() method started");
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User currentUser = userRepository.findByEmail(userEmail)
@@ -461,24 +407,17 @@ public class BallotService {
 
         List<Ballot> ballots = ballotRepository.findVotedAndEndedBallots(currentUser, Status.Ended);
 
-        List<Ballot> all = new ArrayList<>(ballots);
-        if(demoBallotIdsCsv != null && !demoBallotIdsCsv.isBlank()) {
-            List<Integer> demoIds = Arrays.stream(demoBallotIdsCsv.split(","))
-                    .map(String::trim)
-                    .filter(s -> !s.isEmpty())
-                    .map(Integer::valueOf)
-                    .collect(Collectors.toList());
+        List<Integer> demoIds = List.of(1502, 1503, 1504);
 
-            List<Ballot> demoBallots = ballotRepository.findAllById(demoIds);
-            Set<Integer> existingIds = all.stream().map(Ballot::getId).collect(Collectors.toSet());
-            for (Ballot b: demoBallots) {
-                if (!existingIds.contains(b.getId())) {
-                    all.add(b);
-                }
+        List<Ballot> all = new ArrayList<>(ballots);
+
+        List<Ballot> demoBallots = ballotRepository.findAllById(demoIds);
+        Set<Integer> existingIds = all.stream().map(Ballot::getId).collect(Collectors.toSet());
+        for (Ballot b: demoBallots) {
+            if (!existingIds.contains(b.getId())) {
+                all.add(b);
             }
         }
-
-        System.out.println("Found " + ballots.size() + " ballots");
 
         return all.stream()
                 .map(this::convertToResultResponse)

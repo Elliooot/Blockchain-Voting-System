@@ -10,7 +10,9 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5332/postgres} # For local development
     username: ${POSTGRES_USER} # Will be read from local environment variables
-    password: ${POSTGRES_PASSWORD}
+  # Prefer POSTGRES_PASSWORD (used to initialize the Postgres container),
+  # but fall back to SPRING_DATASOURCE_PASSWORD if that's the only one provided.
+  password: ${POSTGRES_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
   jpa:
     hibernate:
       ddl-auto: update

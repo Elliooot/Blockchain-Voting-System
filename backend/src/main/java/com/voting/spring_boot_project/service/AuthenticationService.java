@@ -1,10 +1,7 @@
 package com.voting.spring_boot_project.service;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,9 +28,6 @@ public class AuthenticationService {
 
     private final BallotRepository ballotRepository;
 
-    @Value("${demo.ballot-ids:}")
-    private String demoBallotIdsCsv;
-    
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
         var user = User.builder()
@@ -75,22 +69,28 @@ public class AuthenticationService {
     }
 
     private void assignDemoBallotsToUser(User user) {
-        if (demoBallotIdsCsv == null || demoBallotIdsCsv.isBlank()) return;
+        System.out.println("🎯 assignDemoBallotsToUser - Starting for user: " + user.getEmail());
 
-        List<Integer> ids = Arrays.stream(demoBallotIdsCsv.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .map(Integer::valueOf)
-                .collect(Collectors.toList());
-        
-        var ballots = ballotRepository.findAllById(ids);
-        for (var ballot: ballots) {
-            var qv = ballot.getQualifiedVoters();
-            boolean exists = qv.stream().anyMatch(u -> u.getId().equals(user.getId()));
-            if (!exists) {
-                qv.add(user);
-                ballotRepository.save(ballot);
-            }
+        List<Integer> demoIds = List.of(1502, 1503, 1504);
+
+        System.out.println("🎯 Parsed demo ballot IDs: " + demoIds);
+
+        for (Integer id : demoIds) {
+            ballotRepository.findById(id).ifPresent(ballot -> {
+                System.out.println("🎯 Processing ballot ID: " + ballot.getId() + ", Title: " + ballot.getTitle());
+                var qv = ballot.getQualifiedVoters();
+                boolean exists = qv.stream().anyMatch(u -> u.getId().equals(user.getId()));
+
+                if (!exists) {
+                    System.out.println("✅ Adding user " + user.getEmail() + " to ballot " + ballot.getId());
+                    qv.add(user);
+                    ballotRepository.save(ballot);
+                } else {
+                    System.out.println("⚠️ User " + user.getEmail() + " already qualified for ballot " + ballot.getId());
+                }
+            });
         }
+
+        System.out.println("🎯 Demo ballot assignment completed");
     }
 }
