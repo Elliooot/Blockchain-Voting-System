@@ -76,7 +76,6 @@ const TaskCard = ({
       await deleteBallot(id);
       if (onDeleted) onDeleted();
     } catch (error) {
-      console.error('Failed to delete ballot:', error);
       alert('Failed to delete ballot. Please try again.');
     }
   }
@@ -267,7 +266,6 @@ function Ballots() {
 
         setTasks(formattedTasks);
     } catch (error) {
-        console.error("Failed to load ballots in component: ", error);
         setError("Could not fetch election. Please try again later.");
     } finally {
         setIsLoading(false);

@@ -61,7 +61,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                         localStorage.removeItem('token');
                     }
                 } catch (error) {
-                    console.error('Failed to decode persistent token', error);
                     localStorage.removeItem('token');
                 }
             }
@@ -112,7 +111,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
             logout(); // logout to clear all status
         } catch (error) {
-            console.error('Failed to delete account', error);
             logout();
             throw error;
         }

@@ -56,10 +56,6 @@ function Wallet() {
                 setSavedWalletAddress(newAddress);
             }
         } catch (error: any) {
-            console.error("❌ Full error object:", error);
-            console.error("❌ Error response:", error.response?.data);
-            console.error("❌ Error status:", error.response?.status);
-            
             if (error.code === 4001) {
                 setError("Connection rejected by user.");
             } else if (error.response) {
@@ -80,7 +76,6 @@ function Wallet() {
             await updateWalletAddress("");
             setSavedWalletAddress(null);
         } catch (error) {
-            console.error("Failed to remove wallet address from database: " + error);
             setError("Failed to remove wallet address from database. Please try again.");
         } finally {
             setIsRemoving(false);

@@ -150,7 +150,6 @@ function EditBallot() {
           alert(`Error: No user found with the email "${voterEmail}".`);
         }
       } catch (error) {
-        console.error("An error occurred while searching for the voter:", error);
         alert('An error occurred while searching for the voter.');
       } finally {
         setIsAddingVoter(false);
@@ -203,7 +202,6 @@ function EditBallot() {
       alert('Ballot edited successfully!');
       navigate('/dashboard/ballots');
     } catch (error) {
-      console.error('Failed to edit ballot:', error);
       alert('Failed to edit ballot. Please try again.');
     } finally {
       setIsSubmitting(false);

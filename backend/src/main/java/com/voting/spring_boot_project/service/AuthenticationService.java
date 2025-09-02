@@ -78,8 +78,6 @@ public class AuthenticationService {
                 if (!exists) {
                     qv.add(user);
                     ballotRepository.save(ballot);
-                } else {
-                    System.out.println("⚠️ User " + user.getEmail() + " already qualified for ballot " + ballot.getId());
                 }
             });
         }

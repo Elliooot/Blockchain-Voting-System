@@ -38,7 +38,6 @@ function Login() {
         } catch(err: any) {
             const message = 'Login failed. Please check your email and password.';
             setError(message); 
-            console.error("Login failed:", err.response.data);
         }
     }
 

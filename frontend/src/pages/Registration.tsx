@@ -51,7 +51,6 @@ function Registration() {
             } else {
                 const errorText = await response.data;
                 setError(errorText);
-                console.error(errorText);
             }
         } catch(err: any) {
             const message = err.response?.data?.error || 'Registration failed. Please try again.';

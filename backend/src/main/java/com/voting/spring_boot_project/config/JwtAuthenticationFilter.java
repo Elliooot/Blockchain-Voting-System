@@ -75,14 +75,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
-                } else {
-                    System.out.println("⚠️ JWT Filter - Invalid token");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        } else {
-            System.out.println("⚠️ JWT Filter - User email is null or authentication already exists");
         }
         
         filterChain.doFilter(request, response);

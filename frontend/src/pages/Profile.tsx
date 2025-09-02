@@ -29,7 +29,6 @@ function Profile() {
             
             setVoteRecords(recordForm);
         } catch (error) {
-            console.error("Failed to load vote records in component: ", error);
             throw error;
         }
     };

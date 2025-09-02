@@ -94,7 +94,7 @@ describe('Pages integration tests', () => {
       component = renderWithRouter(<Ballots />);
     });
     
-    // 等待組件完全渲染和狀態更新
+  // Wait for the component to fully render and update its state
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Manage Ballots/i })).toBeInTheDocument();
     }, { timeout: 3000 });

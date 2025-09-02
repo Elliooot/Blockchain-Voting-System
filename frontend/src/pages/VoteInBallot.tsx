@@ -82,7 +82,6 @@ function VoteInBallot() {
             alert("Vote Submitted!");
             navigate('/dashboard/ballots');
         } catch (error) {
-            console.error('Failed to cast vote:', error);
             alert('Failed to cast vote. Please try again.')
         }
     }

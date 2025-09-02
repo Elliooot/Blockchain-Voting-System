@@ -109,7 +109,6 @@ function CreateBallot() {
         alert(`Error: No user found with the email "${voterEmail}".`);
       }
     } catch (error) {
-      console.error("An error occurred while searching for the voter:", error);
       alert('An error occurred while searching for the voter.');
     } finally {
       setIsAddingVoter(false);
@@ -138,7 +137,6 @@ function CreateBallot() {
       alert('Ballot created successfully!');
       navigate('/dashboard/ballots');
     } catch (error) {
-      console.error('Failed to create ballot:', error);
       alert('Failed to create ballot. Please try again.');
     } finally {
       setIsSubmitting(false);
