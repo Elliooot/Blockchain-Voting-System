@@ -9,6 +9,7 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,11 +20,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "vote", indexes = {
+@Table(
+    name = "vote",
+    indexes = {
     @Index(name = "idx_vote_ballot_id", columnList = "ballot_id"),
     @Index(name = "idx_vote_user_id", columnList = "user_id"),
     @Index(name = "idx_vote_option_id", columnList = "option_id"),
-})
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uq_vote_ballot_user", columnNames = {"ballot_id", "user_id"})
+    }
+)
 public class Vote {
     @Id
     @GeneratedValue

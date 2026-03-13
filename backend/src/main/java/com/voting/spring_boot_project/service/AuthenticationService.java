@@ -1,5 +1,6 @@
 package com.voting.spring_boot_project.service;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.security.authentication.AuthenticationManager;
@@ -7,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.dto.AuthenticationRequest;
@@ -27,6 +29,9 @@ public class AuthenticationService {
     private final AuthenticationManager authenticationManager;
 
     private final BallotRepository ballotRepository;
+
+    @Value("${demo.ballot-ids:}")
+    private String demoBallotIdsCsv;
 
     @Transactional
     public AuthenticationResponse register(RegisterRequest request) {
@@ -67,8 +72,14 @@ public class AuthenticationService {
     }
 
     private void assignDemoBallotsToUser(User user) {
-        List<Integer> demoIds = List.of(1502, 1503, 1504);
-
+        if (demoBallotIdsCsv == null || demoBallotIdsCsv.isBlank()) {
+            return;
+        }
+        List<Integer> demoIds = Arrays.stream(demoBallotIdsCsv.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(Integer::valueOf)
+            .toList();
 
         for (Integer id : demoIds) {
             ballotRepository.findById(id).ifPresent(ballot -> {

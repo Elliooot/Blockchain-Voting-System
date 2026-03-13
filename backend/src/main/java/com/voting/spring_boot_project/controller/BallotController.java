@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
@@ -42,14 +43,14 @@ public class BallotController {
 
     @PostMapping("/create")
     public ResponseEntity<BallotResponse> createBallot(
-        @RequestBody CreateBallotRequest request
+        @Valid @RequestBody CreateBallotRequest request
     ) {
         return ResponseEntity.ok(ballotService.createBallot(request));
     }
 
     @PatchMapping("/update/{id}")
     public ResponseEntity<BallotResponse> updateBallot(
-        @PathVariable Integer id, @RequestBody UpdateBallotRequest request
+        @PathVariable Integer id, @Valid @RequestBody UpdateBallotRequest request
     ) {
         return ResponseEntity.ok(ballotService.updateInfo(id, request));
     }

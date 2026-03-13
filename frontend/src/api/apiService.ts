@@ -1,32 +1,5 @@
 import axiosInstance from "./axiosConfig";
 
-axiosInstance.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        
-        if(token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            console.log("❌ API Request - NO TOKEN FOUND!");
-        }
-        
-        return config;
-    },
-    (error) => {
-        console.error("❌ API Request interceptor error:", error);
-        return Promise.reject(error);
-    }
-);
-
-axiosInstance.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
 export const createBallot = async (ballotData: object) => {
     try {
         const response = await axiosInstance.post('/ballots/create', ballotData);

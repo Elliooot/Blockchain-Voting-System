@@ -26,6 +26,8 @@ interface ApiBallot {
 function VoteInBallot() {
     const [ballot, setBallot] = useState<ApiBallot | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [txHash, setTxHash] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const { ballotId } = useParams<{ ballotId: string }>();
@@ -67,6 +69,7 @@ function VoteInBallot() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMessage(null);
 
         if(formData.optionId === 0) {
             alert("Please select an option before voting.")
@@ -78,11 +81,13 @@ function VoteInBallot() {
         setIsSubmitting(true);
 
         try {
-            await castVote(formData);
-            alert("Vote Submitted!");
+            const response = await castVote(formData);
+            const hash = response?.txHash ?? null;
+            setTxHash(hash);
+            alert(hash ? `Vote Submitted!\nTx: ${hash}` : "Vote Submitted!");
             navigate('/dashboard/ballots');
         } catch (error) {
-            alert('Failed to cast vote. Please try again.')
+            setErrorMessage('Failed to cast vote. Please try again.');
         }
     }
 
@@ -152,8 +157,8 @@ function VoteInBallot() {
     const ContentStyle = "text-left text-base font-medium text-gray-500"
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-6 lg:p-4">
-            <div className="max-w-4xl mx-10">
+        <div className="min-h-screen bg-transparent p-4 sm:p-6 lg:p-4">
+            <div className="max-w-4xl mx-6 sm:mx-10">
                 <div className="mb-4">
                     <h3 className={TitleStyle} title="StartTime">Start Time</h3>
                     {/* <p className={ContentStyle}>{new Date(Number(ballot?.startTime) * 1000).toLocaleString()}</p> */}
@@ -173,7 +178,7 @@ function VoteInBallot() {
                     <p className={ContentStyle}>{ballot?.description}</p>
                 </div>
                 
-                <div className="bg-white rounded-lg shadow-md p-6">
+                <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.08)] border border-white/60 p-6">
                     <form onSubmit={handleSubmit}>
                         <h3 className="text-lg font-semibold text-gray-800 mb-4">
                             Select your choice:
@@ -183,10 +188,10 @@ function VoteInBallot() {
                             {(ballot?.options ?? []).map((option) => (
                                 <label 
                                     key={option.id}
-                                    className={`block p-4 border rounded-lg cursor-pointer transition-colors ${
+                                    className={`block p-4 border rounded-xl cursor-pointer transition-colors ${
                                         formData.optionId === option.id
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-gray-300 hover:border-gray-400'
+                                            ? 'border-blue-500 bg-blue-50/80'
+                                            : 'border-gray-200 hover:border-gray-300'
                                     }`}
                                 >
                                     <input
@@ -221,6 +226,17 @@ function VoteInBallot() {
                                 </label>
                             ))}
                         </div>
+
+                        {errorMessage && (
+                            <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                                {errorMessage}
+                            </div>
+                        )}
+                        {txHash && (
+                            <div className="mb-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700">
+                                Transaction: {txHash}
+                            </div>
+                        )}
 
                         <div className="flex justify-end gap-4 pt-6 border-t border-gray-200">
                             <button

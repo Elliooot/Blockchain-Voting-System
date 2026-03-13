@@ -17,7 +17,7 @@ const axiosInstance: AxiosInstance = axios.create({
 // Request interceptor
 axiosInstance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         if(token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
@@ -34,6 +34,10 @@ axiosInstance.interceptors.response.use(
         return response;
     },
     (error: AxiosError) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token');
+            sessionStorage.removeItem('token');
+        }
         return Promise.reject(error);
     }
 );

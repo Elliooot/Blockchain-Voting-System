@@ -10,9 +10,9 @@ spring:
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5332/postgres} # For local development
     username: ${POSTGRES_USER} # Will be read from local environment variables
-  # Prefer POSTGRES_PASSWORD (used to initialize the Postgres container),
-  # but fall back to SPRING_DATASOURCE_PASSWORD if that's the only one provided.
-  password: ${POSTGRES_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
+    # Prefer POSTGRES_PASSWORD (used to initialize the Postgres container),
+    # but fall back to SPRING_DATASOURCE_PASSWORD if that's the only one provided.
+    password: ${POSTGRES_PASSWORD:${SPRING_DATASOURCE_PASSWORD}}
   jpa:
     hibernate:
       ddl-auto: update
@@ -23,11 +23,16 @@ spring:
     show-sql: true
   main:
     web-application-type: servlet
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 application:
   security:
     jwt:
       secret-key: ${JWT_SECRET_KEY}
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
 
 blockchain:
   node:
@@ -38,6 +43,13 @@ blockchain:
     key: ${PRIVATE_KEY}
   network:
     chainId: 11155111
+  gas:
+    price: ${BLOCKCHAIN_GAS_PRICE:20000000000}
+    limit:
+      create-ballot: ${BLOCKCHAIN_GAS_LIMIT_CREATE:1000000}
+      update-ballot: ${BLOCKCHAIN_GAS_LIMIT_UPDATE:500000}
+      vote: ${BLOCKCHAIN_GAS_LIMIT_VOTE:300000}
+      finalize: ${BLOCKCHAIN_GAS_LIMIT_FINALIZE:1000000}
 
 demo:
   ballot-ids: ${DEMO_BALLOT_IDS:102,103,104}

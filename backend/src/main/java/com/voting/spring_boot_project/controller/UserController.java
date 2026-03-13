@@ -18,12 +18,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.voting.spring_boot_project.dto.ChangePasswordRequest;
 import com.voting.spring_boot_project.dto.GetUserResponse;
 import com.voting.spring_boot_project.dto.UpdateWalletRequest;
 import com.voting.spring_boot_project.entity.User;
 import com.voting.spring_boot_project.repository.UserRepository;
 import com.voting.spring_boot_project.service.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -84,7 +86,7 @@ public class UserController {
     
     @PutMapping("/update_wallet")
     public ResponseEntity<Map<String, String>> updateWalletAddress(
-        @RequestBody UpdateWalletRequest request
+        @Valid @RequestBody UpdateWalletRequest request
     ){
         return ResponseEntity.ok(userService.updateWalletAddress(request));
     }
@@ -101,13 +103,13 @@ public class UserController {
     @PostMapping("/change-password")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Map<String, String>> changePassword(
-            @RequestBody Map<String, String> request,
+            @Valid @RequestBody ChangePasswordRequest request,
             Authentication authentication) {
         try {
             userService.changePassword(
                 authentication.getName(), // get user email from jwt token
-                request.get("currentPassword"),
-                request.get("newPassword")
+                request.getCurrentPassword(),
+                request.getNewPassword()
             );
             
             Map<String, String> response = new HashMap<>();

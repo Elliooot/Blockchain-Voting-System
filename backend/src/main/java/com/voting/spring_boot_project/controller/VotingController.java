@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import com.voting.spring_boot_project.dto.VoteRecordResponse;
 import com.voting.spring_boot_project.dto.VoteRequest;
@@ -24,7 +25,7 @@ public class VotingController {
 
     @PostMapping("/vote")
     public ResponseEntity<VoteResponse> cateVote(
-        @RequestBody VoteRequest request
+        @Valid @RequestBody VoteRequest request
     ) {
         return ResponseEntity.ok(votingService.castVote(request));
     }

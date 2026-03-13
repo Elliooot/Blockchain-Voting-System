@@ -88,8 +88,67 @@ const navigationItemsAdmin = [
 
 const theme = createTheme({
     palette: {
+        mode: 'light',
+        primary: {
+            main: '#007aff',
+        },
         background: {
-            paper: '#d3d3d3',
+            default: 'transparent',
+            paper: 'rgba(255, 255, 255, 0.72)',
+        },
+        text: {
+            primary: '#0a0a0a',
+            secondary: '#6b7280',
+        },
+    },
+    shape: {
+        borderRadius: 16,
+    },
+    typography: {
+        fontFamily: '"SF Pro Text", "SF Pro Display", "Helvetica Neue", "Segoe UI", sans-serif',
+        h6: {
+            fontWeight: 600,
+        },
+    },
+    components: {
+        MuiDrawer: {
+            styleOverrides: {
+                paper: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+                    backdropFilter: 'blur(14px)',
+                    borderRight: '1px solid rgba(60, 60, 67, 0.12)',
+                },
+            },
+        },
+        MuiListItemButton: {
+            styleOverrides: {
+                root: {
+                    borderRadius: 12,
+                    margin: '4px 8px',
+                },
+            },
+        },
+        MuiListItemIcon: {
+            styleOverrides: {
+                root: {
+                    color: '#3a3a3c',
+                },
+            },
+        },
+        MuiDivider: {
+            styleOverrides: {
+                root: {
+                    borderColor: 'rgba(60, 60, 67, 0.12)',
+                },
+            },
+        },
+        MuiCssBaseline: {
+            styleOverrides: {
+                body: {
+                    backgroundColor: 'var(--ios-bg)',
+                    backgroundImage: 'var(--ios-bg-gradient)',
+                },
+            },
         },
     },
 });
@@ -183,7 +242,7 @@ function Dashboard() {
                         </ListItem>
                     </List>
                 </Drawer>
-                <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
+                <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: 'transparent', minHeight: '100vh' }}>
                     <DrawerHeader />
                     <Outlet />
                 </Box>

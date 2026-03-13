@@ -16,4 +16,5 @@ public class VoteResponse {
     private Integer optionId;
     private String optionName;
     private Date timestamp;
+    private String txHash;
 }

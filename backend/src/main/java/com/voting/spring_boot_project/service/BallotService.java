@@ -1,6 +1,5 @@
 package com.voting.spring_boot_project.service;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -10,20 +9,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.tx.gas.StaticGasProvider;
+import org.springframework.beans.factory.annotation.Value;
 
-import com.voting.spring_boot_project.contract.Voting;
 import com.voting.spring_boot_project.dto.BallotResponse;
 import com.voting.spring_boot_project.dto.CreateBallotRequest;
 import com.voting.spring_boot_project.dto.OptionResponse;
@@ -50,12 +42,10 @@ public class BallotService {
     private final OptionRepository optionRepository;
     private final VoteRepository voteRepository;
 
-    private final Web3j web3j;
-    private final Credentials credentials;
+    private final BlockchainGateway blockchainGateway;
 
-    @Value("${blockchain.contract.address}")
-    private String contractAddress;
-
+    @Value("${demo.ballot-ids:}")
+    private String demoBallotIdsCsv;
     public List<BallotResponse> getBallotsForCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
@@ -114,8 +104,6 @@ public class BallotService {
         Ballot ballot = ballotRepository.findById(ballotId)
             .orElseThrow(() -> new RuntimeException("Ballot not found with id: " + ballotId));
 
-        Option[] options = ballot.getOptions().toArray(new Option[0]);
-
         return convertToBallotResponse(ballot);
     }
 
@@ -123,6 +111,10 @@ public class BallotService {
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
     @Transactional
     public BallotResponse createBallot(CreateBallotRequest request) {
+        if (request.getOptions() == null || request.getOptions().size() < 2) {
+            throw new RuntimeException("Ballot must contain at least two options");
+        }
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         User admin = userRepository.findByEmail(userEmail)
@@ -133,76 +125,58 @@ public class BallotService {
             qualifiedVoters = userRepository.findAllById(request.getQualifiedVoterIds());
         }
 
-        var ballot = Ballot.builder()
-                .admin(admin) // Use creditable user object
-                .title(request.getTitle())
-                .description(request.getDescription())
-                .startTime(request.getStartTime())
-                .duration(request.getDuration())
-                .qualifiedVoters(qualifiedVoters)
-                .status(Status.Pending)
-                .build();
-
-        for(Option option : request.getOptions()) {
-            option.setBallot(ballot);
+        List<User> qualifiedVotersForChain = qualifiedVoters;
+        if (qualifiedVotersForChain.isEmpty()) {
+            throw new RuntimeException("Ballot must include at least one qualified voter");
+        }
+        if (qualifiedVotersForChain.stream().anyMatch(u -> u.getWalletAddress() == null || u.getWalletAddress().isBlank())) {
+            throw new RuntimeException("All qualified voters must have wallet addresses");
         }
 
-        ballot.setOptions(request.getOptions());
+        long startTimeSeconds = request.getStartTime().toInstant().getEpochSecond();
+        long durationSeconds = request.getDuration().getSeconds();
+        long proposalCount = request.getOptions().size();
 
-        // Calling Smart Contract
+        List<String> voterAddresses = qualifiedVotersForChain.stream()
+            .map(User::getWalletAddress)
+            .toList();
+
         try {
-            BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
-            BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
-            ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
-
-            // Loading the deployed contract
-            Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
-
-            // Converting Date and Duration in Java into uint256(sec) in Solidity
-            long startTimeSeconds = request.getStartTime().toInstant().getEpochSecond();
-            long durationSeconds = request.getDuration().getSeconds();
-
-            long proposalCount = request.getOptions().size();
-
-            List<String> voterAddresses = qualifiedVoters.stream()
-                .map(User::getWalletAddress)
-                .collect(Collectors.toList());
-
-            // Calling createBallot() method and send
-            TransactionReceipt receipt = contract.createBallot(
-                BigInteger.valueOf(startTimeSeconds), 
-                BigInteger.valueOf(durationSeconds),
-                BigInteger.valueOf(proposalCount),
+            BlockchainGateway.CreateBallotResult chainResult = blockchainGateway.createBallot(
+                startTimeSeconds,
+                durationSeconds,
+                proposalCount,
                 voterAddresses
-            ).send();
+            );
 
-            List<Voting.BallotCreatedEventResponse> ballotEvents = contract.getBallotCreatedEvents(receipt);
-            if(ballotEvents.isEmpty()) throw new RuntimeException("No BallotCreated event found");
-            Long blockchainBallotId = ballotEvents.get(0).ballotId.longValue();
-            ballot.setBlockchainBallotId(blockchainBallotId);  // Return ballot ID on blockchain
-
-            List<Voting.ProposalCreatedEventResponse> proposalEvents = contract.getProposalCreatedEvents(receipt);
-            List<Option> requestOptions = request.getOptions();
-
-            if(proposalEvents.isEmpty() || proposalEvents.size() != requestOptions.size()) {
-                throw new RuntimeException("Mismatch between number of options (" + requestOptions.size() + ") and proposal events found (" + proposalEvents.size() + ")");
+            List<Option> options = new ArrayList<>(request.getOptions());
+            if (chainResult.proposalIds().size() != options.size()) {
+                throw new RuntimeException("Mismatch between number of options and proposal events");
             }
 
-            for (int i = 0; i < proposalEvents.size(); i++) {
-                Voting.ProposalCreatedEventResponse event = proposalEvents.get(i);
-                Option correspondingOption = requestOptions.get(i);
-                
-                correspondingOption.setBlockchainOptionId(event.proposalId.longValue());
+            var ballot = Ballot.builder()
+                    .admin(admin)
+                    .title(request.getTitle())
+                    .description(request.getDescription())
+                    .startTime(request.getStartTime())
+                    .duration(request.getDuration())
+                    .qualifiedVoters(qualifiedVoters)
+                    .status(Status.Pending)
+                    .blockchainBallotId(chainResult.ballotId())
+                    .options(options)
+                    .build();
+
+            for (int i = 0; i < options.size(); i++) {
+                Option option = options.get(i);
+                option.setBallot(ballot);
+                option.setBlockchainOptionId(chainResult.proposalIds().get(i));
             }
 
-            ballotRepository.save(ballot);
+            Ballot saved = ballotRepository.save(ballot);
+            return convertToBallotResponse(saved);
         } catch (Exception e) {
-            e.printStackTrace();
-            // ballotRepository.delete(createdballotInDB);
             throw new RuntimeException("Failed to create ballot on the blockchain: " + e.getMessage(), e);
         }
-
-        return convertToBallotResponse(ballot);
     }
 
     @PreAuthorize("hasAuthority('ElectoralAdmin')")
@@ -243,71 +217,59 @@ public class BallotService {
         }
 
         try {
-            BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
-            BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
-            ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
-
-            // Loading the deployed contract
-            Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
-
-            BigInteger bcId = BigInteger.valueOf(ballot.getBlockchainBallotId());
-
-            long chainNow = web3j.ethGetBlockByNumber(DefaultBlockParameterName.LATEST, false)
-                .send().getBlock().getTimestamp().longValue();
+            if (ballot.getBlockchainBallotId() == null) {
+                throw new RuntimeException("Blockchain ballot ID missing");
+            }
+            long blockchainBallotId = ballot.getBlockchainBallotId();
+            long chainNow = blockchainGateway.getLatestBlockTimestamp();
             if (request.getStartTime() != null) {
                 long newStart = request.getStartTime().toInstant().getEpochSecond();
                 if (newStart <= chainNow) throw new RuntimeException("Start time must be in the future (chain time)");
-                contract.updateStartTime(bcId, BigInteger.valueOf(newStart)).send();
+                blockchainGateway.updateStartTime(blockchainBallotId, newStart);
                 ballot.setStartTime(request.getStartTime());
             }
 
             if (request.getDuration() != null) {
                 long durSec = request.getDuration().getSeconds();
                 if (durSec <= 0) throw new RuntimeException("Duration must be > 0");
-                contract.updateDuration(bcId, BigInteger.valueOf(durSec)).send();
+                blockchainGateway.updateDuration(blockchainBallotId, durSec);
                 ballot.setDuration(request.getDuration());
             }
 
-            List<Integer> newIds = Optional.ofNullable(request.getQualifiedVoterIds()).orElse(List.of());
-            Set<Integer> oldIds = ballot.getQualifiedVoters().stream().map(User::getId).collect(Collectors.toSet());
-            Set<Integer> newIdSet = new HashSet<>(newIds);
+            if (request.getQualifiedVoterIds() != null) {
+                List<Integer> newIds = request.getQualifiedVoterIds();
+                Set<Integer> oldIds = ballot.getQualifiedVoters().stream().map(User::getId).collect(Collectors.toSet());
+                Set<Integer> newIdSet = new HashSet<>(newIds);
 
-            Set<Integer> toAdd = new HashSet<>(newIdSet);
-            toAdd.removeAll(oldIds);
+                Set<Integer> toAdd = new HashSet<>(newIdSet);
+                toAdd.removeAll(oldIds);
 
-            Set<Integer> toRemove = new HashSet<>(oldIds);
-            toRemove.removeAll(newIdSet);
+                Set<Integer> toRemove = new HashSet<>(oldIds);
+                toRemove.removeAll(newIdSet);
 
-            List<User> addUsers = userRepository.findAllById(toAdd);
-            List<User> removeUsers = userRepository.findAllById(toRemove);
-            if(addUsers.stream().anyMatch(u -> u.getWalletAddress() == null || u.getWalletAddress().isBlank())) {
-                throw new RuntimeException("Some added voters have no wallet address");
+                List<User> addUsers = userRepository.findAllById(toAdd);
+                List<User> removeUsers = userRepository.findAllById(toRemove);
+                if(addUsers.stream().anyMatch(u -> u.getWalletAddress() == null || u.getWalletAddress().isBlank())) {
+                    throw new RuntimeException("Some added voters have no wallet address");
+                }
+
+                for(User u: addUsers) {
+                    blockchainGateway.registerVoter(blockchainBallotId, u.getWalletAddress());
+                }
+
+                for(User u: removeUsers) {
+                    blockchainGateway.unregisterVoter(blockchainBallotId, u.getWalletAddress());
+                }
+
+                List<User> qualifiedVoters = userRepository.findAllById(newIds);
+                ballot.getQualifiedVoters().clear();
+                ballot.getQualifiedVoters().addAll(qualifiedVoters);
             }
-
-            for(User u: addUsers) {
-                contract.registerVoter(bcId, u.getWalletAddress()).send();
-            }
-
-            for(User u: removeUsers) {
-                contract.unregisterVoter(bcId, u.getWalletAddress()).send();
-            }
-
-            ballot.getQualifiedVoters().clear();
-            ballot.getQualifiedVoters().addAll(userRepository.findAllById(newIds));
-
-            List<User> qualifiedVoters = request.getQualifiedVoterIds().stream()
-                .map(userRepository::findById)
-                .filter(Optional::isPresent)
-                .map(Optional::get)
-                .collect(Collectors.toList());
-
-            ballot.getQualifiedVoters().clear();
-            ballot.getQualifiedVoters().addAll(qualifiedVoters);
 
             ballotRepository.save(ballot);
 
         } catch (Exception e){
-            e.printStackTrace();
+            throw new RuntimeException("Failed to update ballot on blockchain: " + e.getMessage(), e);
         }
 
         return convertToBallotResponse(ballot);
@@ -360,26 +322,19 @@ public class BallotService {
     }
 
     private void finalizeResultOnBlockchain(Ballot ballot, Long blockchainBallotId) {
+        if (blockchainBallotId == null) {
+            return;
+        }
         try {
-            BigInteger gasPrice = BigInteger.valueOf(20_000_000_000L); // 20 Gwei
-            BigInteger gasLimit = BigInteger.valueOf(1_000_000L);
-            ContractGasProvider gasProvider = new StaticGasProvider(gasPrice, gasLimit);
-            Voting contract = Voting.load(contractAddress, web3j, credentials, gasProvider);
-
-            List<BigInteger> counts = contract.getVoteCounts(BigInteger.valueOf(blockchainBallotId)).send();
+            List<BigInteger> counts = blockchainGateway.getVoteCounts(blockchainBallotId);
             List<Option> options = optionRepository.findByBallot(ballot);
 
             for(int i = 0; i < options.size(); i++) {
                 options.get(i).setVoteCount(counts.get(i).intValue());
             }
             optionRepository.saveAll(options);
-            
-            TransactionReceipt receipt = contract.finalizeResult(BigInteger.valueOf(blockchainBallotId)).send();
-    
-            List<Voting.BallotResultFinalizedEventResponse> resultEvents = contract.getBallotResultFinalizedEvents(receipt);
-            if(resultEvents.isEmpty()) throw new RuntimeException("No resultFinalized events found");
-    
-            List<BigInteger> blockchainResultIds = resultEvents.get(0).resultProposalIds;
+
+            List<BigInteger> blockchainResultIds = blockchainGateway.finalizeResult(blockchainBallotId);
 
             List<Integer> resultIds = blockchainResultIds.stream()
                     .map(id -> optionRepository.findByBallotAndBlockchainOptionId(ballot, id.longValue())
@@ -404,7 +359,7 @@ public class BallotService {
 
         List<Ballot> ballots = ballotRepository.findVotedAndEndedBallots(currentUser, Status.Ended);
 
-        List<Integer> demoIds = List.of(1502, 1503, 1504);
+        List<Integer> demoIds = parseDemoIds();
 
         List<Ballot> all = new ArrayList<>(ballots);
 
@@ -419,6 +374,17 @@ public class BallotService {
         return all.stream()
                 .map(this::convertToResultResponse)
                 .collect(Collectors.toList());
+    }
+
+    private List<Integer> parseDemoIds() {
+        if (demoBallotIdsCsv == null || demoBallotIdsCsv.isBlank()) {
+            return List.of();
+        }
+        return List.of(demoBallotIdsCsv.split(",")).stream()
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .map(Integer::valueOf)
+            .toList();
     }
 
     public ResultResponse convertToResultResponse(Ballot ballot){ // ballot's title, description, result and option's vote count and total voter

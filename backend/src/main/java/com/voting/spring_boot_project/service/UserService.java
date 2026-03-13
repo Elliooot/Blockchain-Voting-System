@@ -49,10 +49,15 @@ public class UserService {
             User user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            if(request.getWalletAddress() == null || request.getWalletAddress().isEmpty()){
+            String walletAddress = request.getWalletAddress();
+            if(walletAddress == null || walletAddress.isBlank()){
                 user.setWalletAddress(null);
             } else {
-                user.setWalletAddress(request.getWalletAddress());
+                String trimmed = walletAddress.trim();
+                if (!trimmed.matches("^(0x)?[0-9a-fA-F]{40}$")) {
+                    throw new RuntimeException("Invalid wallet address format");
+                }
+                user.setWalletAddress(trimmed);
             }
 
             User savedUser = userRepository.save(user);

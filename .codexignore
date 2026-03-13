@@ -1,0 +1,33 @@
+# Dependencies and build output
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+**/.cache/
+**/coverage/
+**/storybook-static/
+
+# Java/Maven output
+backend/target/
+
+# Hardhat artifacts
+blockchain/artifacts/
+blockchain/cache/
+blockchain/typechain/
+blockchain/ignition/deployments/
+
+# Logs and local state
+**/*.log
+**/*.tmp
+
+# Secrets and environment files
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.keystore
+
+# OS / IDE
+**/.DS_Store
+**/.idea/
+**/.vscode/

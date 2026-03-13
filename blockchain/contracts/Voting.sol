@@ -32,6 +32,11 @@ contract Voting {
     event ProposalCreated(uint256 ballotId, uint256 proposalId); // For Spring Boot to get the proposal ID
     event VoteRecorded(address indexed voter, uint256 ballotId, uint256 proposalId); // For Spring Boot to get the vote details
     event BallotResultFinalized(uint256 ballotId, uint256[] resultProposalIds); // For Spring Boot to get the final result
+    event BallotStartTimeUpdated(uint256 ballotId, uint256 newStartTime);
+    event BallotDurationUpdated(uint256 ballotId, uint256 newDuration);
+    event VoterRegistered(uint256 ballotId, address voter);
+    event VoterUnregistered(uint256 ballotId, address voter);
+    event BallotTerminated(uint256 ballotId);
 
     // Because I use proxy mode (using contract deployer to do every action), so cannot use this
     // modifier onlyAdmin(uint256 _ballotId) {
@@ -41,23 +46,27 @@ contract Voting {
 
     modifier onlyBeforeVoting(uint256 _ballotId) {
         Ballot storage ballot = ballots[_ballotId];
+        require(ballot.ballotId != 0, "Ballot does not exist");
         require(block.timestamp < ballot.startTime, "Voting has already started");
         _;
     }
 
     modifier onlyDuringVoting(uint256 _ballotId) {
         Ballot storage ballot = ballots[_ballotId];
+        require(ballot.ballotId != 0, "Ballot does not exist");
         require(block.timestamp >= ballot.startTime && block.timestamp < ballot.startTime + ballot.duration, "Voting is not active");
         _;
     }
 
     modifier onlyAfterVoting(uint256 _ballotId) {
         Ballot storage ballot = ballots[_ballotId];
+        require(ballot.ballotId != 0, "Ballot does not exist");
         require(block.timestamp >= ballot.startTime + ballot.duration, "Voting period has not ended yet");
         _;
     }
 
     modifier whenNotTerminated(uint256 _ballotId) {
+        require(ballots[_ballotId].ballotId != 0, "Ballot does not exist");
         require(!ballots[_ballotId].terminated, "Voting is terminated");
         _;
     }
@@ -103,6 +112,7 @@ contract Voting {
             require(voterAddress != address(0), "Invalid voter address");
             require(!votersByBallot[ballotId][voterAddress].isRegistered, "Voter is already registered");
             votersByBallot[ballotId][voterAddress].isRegistered = true;
+            emit VoterRegistered(ballotId, voterAddress);
         }
 
         emit BallotCreated(ballotId);
@@ -111,25 +121,31 @@ contract Voting {
     function updateStartTime(uint256 _ballotId, uint256 _newStartTime) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
         require(_newStartTime > block.timestamp, "Start time must be in the future");
         ballots[_ballotId].startTime = _newStartTime;
+        emit BallotStartTimeUpdated(_ballotId, _newStartTime);
     }
 
     function updateDuration(uint256 _ballotId, uint256 _newDuration) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
         ballots[_ballotId].duration = _newDuration;
+        emit BallotDurationUpdated(_ballotId, _newDuration);
     }
 
     function registerVoter(uint256 _ballotId, address voter) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
         require(!votersByBallot[_ballotId][voter].isRegistered, "Voter is already registered");
 
         votersByBallot[_ballotId][voter].isRegistered = true;
+        emit VoterRegistered(_ballotId, voter);
     }
 
     function unregisterVoter(uint256 _ballotId, address voter) public onlyContractAdmin() onlyBeforeVoting(_ballotId) {
         require(votersByBallot[_ballotId][voter].isRegistered, "Voter is not registered");
 
         votersByBallot[_ballotId][voter].isRegistered = false;
+        emit VoterUnregistered(_ballotId, voter);
     }
 
-    function vote(uint256 _ballotId, uint256 _proposalId, address _voterAddress) public whenNotTerminated(_ballotId) onlyContractAdmin {
+    function vote(uint256 _ballotId, uint256 _proposalId, address _voterAddress) public whenNotTerminated(_ballotId) onlyDuringVoting(_ballotId) onlyContractAdmin {
+        require(_proposalId < ballots[_ballotId].proposalCount, "Invalid proposal");
+        require(_voterAddress != address(0), "Invalid voter address");
         require(votersByBallot[_ballotId][_voterAddress].isRegistered, "Voter is not registered");
         require(!votersByBallot[_ballotId][_voterAddress].hasVoted, "Voter has already voted");
 
@@ -186,6 +202,7 @@ contract Voting {
 
     function terminateVoting(uint256 _ballotId) public onlyContractAdmin() {
         ballots[_ballotId].terminated = true;
+        emit BallotTerminated(_ballotId);
     }
     
     function getProposal(uint256 _ballotId, uint256 _proposalId) public view returns (Proposal memory) {
